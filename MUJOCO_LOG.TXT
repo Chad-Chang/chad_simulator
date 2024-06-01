@@ -14529,3 +14529,32 @@ ERROR: Load model error: XML Error: problem reading attribute 'pos'
 Element 'body', line 18
 
 
+Sat Jun  1 17:25:11 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=double_pendulum.xml
+
+
+Sat Jun  1 21:50:49 2024
+ERROR: Load model error: XML Error: Schema violation: unrecognized attribute: 'stiffness'
+
+Element 'material', line 12
+
+
+Sat Jun  1 21:51:24 2024
+ERROR: Load model error: XML Error: Schema violation: unrecognized attribute: 'stiffness'
+
+Element 'material', line 12
+
+
+Sat Jun  1 21:53:35 2024
+ERROR: Load model error: XML Error: Schema violation: unrecognized attribute: 'stiffness'
+
+Element 'geom', line 18
+
+
+Sat Jun  1 21:54:11 2024
+ERROR: Load model error: XML Error: Schema violation: unrecognized attribute: 'stiffness'
+
+Element 'material', line 13
+
+

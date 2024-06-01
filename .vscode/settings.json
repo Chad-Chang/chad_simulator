@@ -3,6 +3,9 @@
         "funcs.h": "c",
         "stdbool.h": "c",
         "string.h": "c",
-        "math.h": "c"
+        "math.h": "c",
+        "core": "cpp",
+        "ostream": "cpp",
+        "iostream": "cpp"
     }
 }
