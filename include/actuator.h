@@ -24,8 +24,7 @@ class Actuator
         double Motor_pos; 
         double Motor_vel;
         double Motor_torque;
-
-        double Motor_taget_torque;
+        
         
         int Motor_Num;
 
@@ -34,6 +33,8 @@ class Actuator
         double Dterm[NUMOFSLAVES][3]{0,};
     public:
         Actuator(int Motor_num, double motor_init_pos);
+        
+        double Motor_taget_torque;
         void DATA_reset();
         void DATA_Receive(const mjModel* m, mjData* d);
         void DATA_Send(const mjModel* m,mjData* d);

@@ -47,9 +47,10 @@ Vector2d Kinematics ::get_posRW_error(int idx) // idx = 0이면 현재 값, idx 
     if (idx == 0) {
       RWpos_error[0] = posRW_error[0][0];
       RWpos_error[1] = posRW_error[1][0];
-  
-  
-  //    cout << " RWpos_err_0_2" <<RWpos_error[0] << endl;
+      printf(" RW err0 %f, %f \n", posRW_error[0][0], posRW_error[1][0]);
+      printf(" RW err1 %f, %f \n", RWpos_error[0], RWpos_error[1]);
+      
+    //  cout << " RWpos_err_0_2" <<RWpos_error[0] << endl;
   //    cout << " RWpos_err_1_2" <<RWpos_error[1] << endl;
       
       return RWpos_error;
@@ -57,9 +58,11 @@ Vector2d Kinematics ::get_posRW_error(int idx) // idx = 0이면 현재 값, idx 
     else {
       RWpos_error_old[0] = posRW_error[0][1];
       RWpos_error_old[1] = posRW_error[1][1];
-
+      printf(" RW err0-1 %f, %f \n", posRW_error[0][1], posRW_error[1][1]);
+      printf(" RW err1-1 %f, %f \n", RWpos_error_old[0], RWpos_error_old[1]);
       return RWpos_error_old;
     }
+    
 }
 
 
@@ -117,5 +120,6 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
       posRW_error[0][0] = ref_r_pos[3] - posRW[0];
       posRW_error[1][0] = ref_th_pos[3] - posRW[1];
   }
+  printf("poserr : %f ,%f \n",posRW_error[0][0],posRW_error[1][0]);
 }
 

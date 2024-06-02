@@ -7,7 +7,6 @@ using namespace std;
 Actuator::Actuator(int Motor_num, double motor_init_pos) {
   Motor_Num = Motor_num;
   Motor_pos = motor_init_pos;
-  
   Motor_initial_pos = motor_init_pos;
 }
 
@@ -25,17 +24,14 @@ void Actuator::DATA_reset() // 이거는 로봇의 configuration에 따라 바�
 
 void Actuator::DATA_Send(const mjModel* m, mjData* d) //joint 토크입력 넣어주기
 {
-    // d->ctrl[Motor_Num] = Motor_taget_torque;
-    // d->qpos[Motor_Num] = Motor_taget_torque;
-    // d->qpos[Motor_Num+8] = PI/20;
-    // cout << "input " << Motor_Num<< ":"<< Motor_taget_torque << endl;
+    d->ctrl[Motor_Num] = 100*Motor_taget_torque;
+    // cout << "input " << Motor_Num<< ":"<< 100*Motor_taget_torque << endl;
 }
 
 
 void Actuator::DATA_Receive(const mjModel* m, mjData* d) //joint position, vel, acceleration 읽어오기
-{   
-
-    // Motor_pos = d->qpos[Motor_Num+7];
+{  
+    Motor_pos = d->qpos[Motor_Num+7];
     // cout << "hello " << Motor_Num<< ":"<< Motor_pos << endl;
 }
 

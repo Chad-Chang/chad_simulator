@@ -14558,3 +14558,12 @@ ERROR: Load model error: XML Error: Schema violation: unrecognized attribute: 's
 Element 'material', line 13
 
 
+Sun Jun  2 01:51:29 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Sun Jun  2 01:53:34 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Sun Jun  2 01:57:24 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+

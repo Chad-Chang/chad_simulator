@@ -43,7 +43,7 @@ int traj_t = 0;
 Vector2d posRW_FL;Vector2d posRW_FR;Vector2d posRW_RL;Vector2d posRW_RR;
 Vector2d posRW_err_FL;Vector2d posRW_err_FR;Vector2d posRW_err_RL;Vector2d posRW_err_RR;
 Vector2d posRW_err_old_FL;Vector2d posRW_err_old_FR;Vector2d posRW_err_old_RL;Vector2d posRW_err_old_RR;
-
+int t_end = 0; 
 
 void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 {      
@@ -55,8 +55,9 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
 
     if(loop_index % loop_time_1ms == 0) // 1ms 맞추기
-    {
+    {   
         t ++;
+        printf("time _start= %d , time _end = %d \n",t, t_end);
         /**************** Controller DATA set길이 : update ***************/
         C_FL.setDelayData(); C_FR.setDelayData();C_RL.setDelayData();C_RR.setDelayData();
         /**************** Kinematic error update ***************/
@@ -89,9 +90,13 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         /****************** State error old******************/ // index 0: curr error/ index 1 : old error
         posRW_err_old_FL = K_FL.get_posRW_error(1); posRW_err_old_FR = K_FR.get_posRW_error(1); posRW_err_old_RL = K_RL.get_posRW_error(1); posRW_err_old_RR = K_RR.get_posRW_error(1);
         
-
+        //error가 잘 나옴
+        cout<< "poseRW_FL "<< posRW_FL[0] <<" ,"<< posRW_FL[1]<<endl;
+        
         /****************** Conrtoller ******************/ // index [0] : R direction output, index [1] : th direction output
         FL_output[0] = C_FL.posPID(posRW_err_FL, posRW_err_old_FL, 0, 0); FL_output[1] = C_FL.posPID(posRW_err_FL, posRW_err_old_FL, 1, 0);
+        //error가 안나옴.
+        printf("error =%f,%f \n",posRW_err_FL[0],posRW_err_FL[1]);
         
         FR_output[0] = C_FR.posPID(posRW_err_FR, posRW_err_old_FR, 0, 1); FR_output[1] = C_FR.posPID(posRW_err_FR, posRW_err_old_FR, 1, 1);
 
@@ -101,6 +106,11 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
         /****************** Conrtoller ******************/ // motor torque input( tau_m, tau_b)
         FL_control_input = JTrans_FL * FL_output; FR_control_input = JTrans_FR * FR_output;RL_control_input = JTrans_RL * RL_output; RR_control_input = JTrans_RR * RR_output;
+        // HAA는 위치제어 걸어놔야함.
+        ACT_FLHAA.Motor_taget_torque = 0 ;ACT_FRHAA.Motor_taget_torque = 0 ;ACT_RLHAA.Motor_taget_torque = 0 ;ACT_RRHAA.Motor_taget_torque = 0 ;
+        ACT_FLHIP.Motor_taget_torque = FL_control_input[0]; ACT_FRHIP.Motor_taget_torque = FR_control_input[0]; ACT_RLHIP.Motor_taget_torque = RL_control_input[0]; ACT_RRHIP.Motor_taget_torque = RR_control_input[0];
+        ACT_FLKNEE.Motor_taget_torque = FL_control_input[1]; ACT_FRKNEE.Motor_taget_torque = FR_control_input[1]; ACT_RLKNEE.Motor_taget_torque = RL_control_input[1]; ACT_RRKNEE.Motor_taget_torque = RR_control_input[1];
+
 
         /****************** actuator Data send to Mjdata ******************/ // d->ctrl[motor_num] = target torque
         ACT_FLHAA.DATA_Send(m,d); ACT_FLHIP.DATA_Send(m,d); ACT_FLKNEE.DATA_Send(m,d);
@@ -111,18 +121,19 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         //  d-> qpos[2] =0.3536;
         
 
-        for(int i = 0; i<4 ; i++)
-        {   
-             d-> qpos[3*i+7] = 0;
-            d-> qpos[3*i+8] = PI/4;
-            d-> qpos[3*i+9] = PI/2;
-        }
+        // for(int i = 0; i<13 ; i++)
+        // {   
+            // d-> qpos[3*i+7] = 0;
+            // d-> qpos[3*i+8] = PI/4;
+            // d-> qpos[3*i+9] = PI/2;
+            // d->ctrl[i] = 10;
+        // }
 
 
-        cout << "position FL:" << " " << d->sensordata[46] << endl;
-        cout << "position FR:" << " " << d->sensordata[49] << endl;
-        cout << "position RL:" << " " << d->sensordata[52] << endl;
-        cout << "position RR:" << " " << d->sensordata[55] << endl;
+        // cout << "position FL:" << " " << d->sensordata[46] << endl;
+        // cout << "position FR:" << " " << d->sensordata[49] << endl;
+        // cout << "position RL:" << " " << d->sensordata[52] << endl;
+        // cout << "position RR:" << " " << d->sensordata[55] << endl;
         // cout << "pose = :" << " " << 0.5-sqrt(2)*0.25 << endl;
     }
 
@@ -130,8 +141,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     {     // loop_index를 data_frequency로 나눈 나머지가 0이면 데이터를 저장.
         save_data(m, d);
     }
-
-
+    t_end  = t ;
     //loop_index += 1;
     loop_index = loop_index + 1;
 }
@@ -203,14 +213,13 @@ int main(int argc, const char** argv)
     //d-> qpos[2] =0.3536;
     fid = fopen(datafile, "w");
     init_save_data();
-
-    // for(int i = 0; i<4 ; i++)
-    // {
-    //     d-> qpos[3*i+7] = PI/5;
-    //     d-> qpos[3*i+8] = PI/3;
-    //     d-> qpos[3*i+9] = -PI/3;
-    // }
-    // d-> qpos[2] = 0.6;
+    for(int i = 0; i<13 ; i++)
+    {   
+        d-> qpos[3*i+7] = 0;
+        d-> qpos[3*i+8] = PI/4;
+        d-> qpos[3*i+9] = PI/2;
+    }
+    d-> qpos[2] = 0.6;
     // use the first while condition if you want to simulate for a period.
     while (!glfwWindowShouldClose(window)) // 주기 : 0.0167
     {
