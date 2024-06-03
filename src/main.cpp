@@ -1,11 +1,11 @@
 #include "funcs.h" // 사용자 정의 헤더파일 <>하면 안됨.
 // namspace std
 #include "actuator.h"
-#include "controller.h"
+#include "rw_controller.h"
 #include "kinematics.h"
 #include "j_controller.h"
 
-Controller C_FL;Controller C_FR;Controller C_RL;Controller C_RR;
+RW_Controller C_FL;RW_Controller C_FR;RW_Controller C_RL;RW_Controller C_RR;
 J_Controller JC_FLHAA;J_Controller JC_FRHAA;J_Controller JC_RLHAA;J_Controller JC_RRHAA;
 
 // Jacobian
@@ -51,10 +51,11 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     
     if(loop_index % 4 ==0) // sampling time 0.0001
     {   
-        JC_FLHAA.set_gain(10,1,0);JC_FRHAA.set_gain(10,1,0);JC_RLHAA.set_gain(10,1,0);JC_RRHAA.set_gain(10,1,0);
+        JC_FLHAA.j_set_gain(10,1,0);JC_FRHAA.j_set_gain(10,1,0);JC_RLHAA.j_set_gain(10,1,0);JC_RRHAA.j_set_gain(10,1,0);
 
         t++;
-        C_FL.setDelayData(); C_FR.setDelayData(); C_RL.setDelayData(); C_RR.setDelayData();
+        JC_FLHAA.j_setDelayData();JC_FRHAA.j_setDelayData();JC_RLHAA.j_setDelayData();JC_RRHAA.j_setDelayData();
+        C_FL.rw_setDelayData(); C_FR.rw_setDelayData(); C_RL.rw_setDelayData(); C_RR.rw_setDelayData();
         K_FL.set_DelayDATA();K_FR.set_DelayDATA();K_RL.set_DelayDATA();K_RR.set_DelayDATA();
         
         /****************** joint angle read ******************/
@@ -100,17 +101,17 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
 
         /****************** Conrtoller ******************/ // index [0] : R direction output, index [1] : th direction output
-        FL_output[0] = C_FL.posPID(posRW_err_FL, posRW_err_old_FL, 0, 0);
-        FL_output[1] = C_FL.posPID(posRW_err_FL, posRW_err_old_FL, 1, 0);
+        FL_output[0] = C_FL.rw_posPID(posRW_err_FL, posRW_err_old_FL, 0, 0);
+        FL_output[1] = C_FL.rw_posPID(posRW_err_FL, posRW_err_old_FL, 1, 0);
         
-        FR_output[0] = C_FR.posPID(posRW_err_FR, posRW_err_old_FR, 0, 1);
-        FR_output[1] = C_FR.posPID(posRW_err_FR, posRW_err_old_FR, 1, 1);
+        FR_output[0] = C_FR.rw_posPID(posRW_err_FR, posRW_err_old_FR, 0, 1);
+        FR_output[1] = C_FR.rw_posPID(posRW_err_FR, posRW_err_old_FR, 1, 1);
 
-        RL_output[0] = C_RL.posPID(posRW_err_RL, posRW_err_old_RL, 0, 2); // R direction output
-        RL_output[1] = C_RL.posPID(posRW_err_RL, posRW_err_old_RL, 1, 2); // th direction output
+        RL_output[0] = C_RL.rw_posPID(posRW_err_RL, posRW_err_old_RL, 0, 2); // R direction output
+        RL_output[1] = C_RL.rw_posPID(posRW_err_RL, posRW_err_old_RL, 1, 2); // th direction output
                 
-        RR_output[0] = C_RR.posPID(posRW_err_RR, posRW_err_old_RR, 0, 3);
-        RR_output[1] = C_RR.posPID(posRW_err_RR, posRW_err_old_RR, 1, 3);
+        RR_output[0] = C_RR.rw_posPID(posRW_err_RR, posRW_err_old_RR, 0, 3);
+        RR_output[1] = C_RR.rw_posPID(posRW_err_RR, posRW_err_old_RR, 1, 3);
         
 
         /****************** Put the torque in Motor ******************/
@@ -141,14 +142,14 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         printf("Motor pose HIP = %f, real = %f\n",ACT_FRKNEE.getMotor_pos(), d->qpos[12]);
     
 
-        // HAA_control_input[0] = JC_FLHAA.compute_JposPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[1] = JC_FRHAA.compute_JposPID(PI/6,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[2] = JC_RLHAA.compute_JposPID(PI/6,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[3] = JC_RRHAA.compute_JposPID(PI/6,ACT_RRHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[0] = JC_FLHAA.compute_JposPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[1] = JC_FRHAA.compute_JposPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[2] = JC_RLHAA.compute_JposPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[3] = JC_RRHAA.compute_JposPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[0] = JC_FLHAA.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[1] = JC_FRHAA.j_posPID(PI/6,ACT_FRHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[2] = JC_RLHAA.j_posPID(PI/6,ACT_RLHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[3] = JC_RRHAA.j_posPID(PI/6,ACT_RRHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[0] = JC_FLHAA.j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[1] = JC_FRHAA.j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[2] = JC_RLHAA.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[3] = JC_RRHAA.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
         d->qpos[2] = 0.5;
         // d-> qpos[17]= 0;
@@ -177,6 +178,8 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
         ACT_RRHIP.DATA_Send(d,RR_control_input[0]);
         ACT_RRKNEE.DATA_Send(d,RR_control_input[1]);
+
+        
     }
 
     if (loop_index % data_frequency == 0) {     // loop_index를 data_frequency로 나눈 나머지가 0이면 데이터를 저장.
