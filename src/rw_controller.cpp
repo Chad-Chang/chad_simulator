@@ -14,6 +14,8 @@ void RW_Controller :: rw_set_gain(Vector4d r_Pgain,Vector4d r_Igain,Vector4d r_D
   RW_th_posIgain = th_Igain;
   RW_th_posDgain = th_Dgain;
 }
+
+
 void RW_Controller::rw_setDelayData() {
   for (int i = 0; i < 2; i++) //[i][0] = z^0, [i][1] = z^1 ->  delay data 만들어 주는 function
   {
@@ -29,7 +31,8 @@ void RW_Controller::rw_setDelayData() {
     RW_Pos_P_term[i + 1][1] = RW_Pos_P_term[i][1];
   }
 }
-//
+
+
 double RW_Controller::rw_posPID(Vector2d posRW_err, Vector2d posRW_err_old, int idx,int Leg_num)
 {
   RW_kp = rw_get_posPgain(Leg_num, idx);
@@ -50,7 +53,5 @@ double RW_Controller::rw_posPID(Vector2d posRW_err, Vector2d posRW_err_old, int 
   
   rw_setDelayData();
   return RW_posPID_output[idx];
-  //
-  
 }
 

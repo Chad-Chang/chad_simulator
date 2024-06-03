@@ -56,7 +56,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     if(loop_index % 4 ==0) // sampling time 0.0001
     {   
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
-        C_FL.j_set_gain(10,0,1);C_FR.j_set_gain(10,0,1);C_RL.j_set_gain(10,0,1);C_RR.j_set_gain(10,0,1); // joint controller
+        C_FL.j_set_gain(100,0,1);C_FR.j_set_gain(100,0,1);C_RL.j_set_gain(100,0,1);C_RR.j_set_gain(100,0,1); // joint controller
         C_FL.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
 
         traj_t ++;
@@ -72,8 +72,14 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         ACT_RRHAA.DATA_Receive(d);ACT_RRHIP.DATA_Receive(d);ACT_RRKNEE.DATA_Receive(d);
         
         /****************** Kinematics ******************/
-        
-        K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),0);
+        ////////////////////// 바이아티큘러 구조일때 - real robot////////////////////////
+        // K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos(),0); 
+        // K_FR.Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos(),1);
+        // K_RL.Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos(),2);
+        // K_RR.Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos(),3);
+
+        ////////////////////// 시리얼 구조일때  - mujoco ////////////////////////
+        K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),0); 
         K_FR.Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos(),1);
         K_RL.Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos(),2);
         K_RR.Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos(),3);
@@ -85,6 +91,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         /****************** Trajectory ******************/
         
         K_FL.pos_trajectory(traj_t, 0); K_FR.pos_trajectory(traj_t, 1); K_RL.pos_trajectory(traj_t, 2); K_RR.pos_trajectory(traj_t, 3); 
+
         
         /****************** State ******************/ // pos RW
         
@@ -98,6 +105,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         posRW_err_FR = K_FR.get_posRW_error(0);
         posRW_err_RL = K_RL.get_posRW_error(0);
         posRW_err_RR = K_RR.get_posRW_error(0);
+
         
 
         /****************** State error old******************/ // index 0: curr error/ index 1 : old error
@@ -129,25 +137,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         RR_control_input = gear_ratio * JTrans_RR * RR_output;
 
         /*******************HAA position control input*******************/
-        // printf("ACT_FLHAA.getMotor_pos() = %f, real = %f\n",ACT_FLHAA.getMotor_pos(), d->qpos[7]);
-        // printf("ACT_FRHAA.getMotor_pos() = %f, real = %f\n",ACT_FRHAA.getMotor_pos(), d->qpos[10]);
-        // printf("ACT_RLHAA.getMotor_pos() = %f, real = %f\n",ACT_RLHAA.getMotor_pos(), d->qpos[13]);
-        // printf("ACT_RRHAA.getMotor_pos() = %f, real = %f\n",ACT_RRHAA.getMotor_pos(), d->qpos[16]);
-        // d->qpos[16] = pi/2;
-
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_RRHAA.getMotor_pos(), d->qpos[16]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_RRHIP.getMotor_pos(), d->qpos[17]);
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_RRKNEE.getMotor_pos(), d->qpos[18]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_RLHAA.getMotor_pos(), d->qpos[13]);
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_RLHIP.getMotor_pos(), d->qpos[14]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_RLKNEE.getMotor_pos(), d->qpos[15]);
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_FLHAA.getMotor_pos(), d->qpos[7]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_FLHIP.getMotor_pos(), d->qpos[8]);
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_FLKNEE.getMotor_pos(), d->qpos[9]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_FRHAA.getMotor_pos(), d->qpos[10]);
-        // printf("Motor pose HAA = %f, real = %f\n",ACT_FRHIP.getMotor_pos(), d->qpos[11]);
-        // printf("Motor pose HIP = %f, real = %f\n",ACT_FRKNEE.getMotor_pos(), d->qpos[12]);
-    
 
         // HAA_control_input[0] = C_FL.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
         // HAA_control_input[1] = C_FR.j_posPID(PI/2,ACT_FRHAA.getMotor_pos(),T,cutoff);
@@ -159,20 +148,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
         d->qpos[2] = 0.5;
-        // d-> qpos[17]= 0;
-        // d-> qpos[18]= 0;
-        // d-> qpos[15]= 0;
-        // d-> qpos[14]= 0;
-        // d-> qpos[14]= 0;
-        // d-> qpos[8]= 0;
-        // d-> qpos[9]= 0;
-        // d-> qpos[12]= 0;
-        // d-> qpos[11]= 0;
-        cout << "FL = " << d-> sensordata[46] << endl;
-        cout << "FR = " << d-> sensordata[49] << endl;
-        cout << "RL = " << d-> sensordata[52] << endl;
-        cout << "RR = " << d-> sensordata[55] << endl;
-        // d->ctrl[0] = 1;
+
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]);
         ACT_FLKNEE.DATA_Send(d,FL_control_input[1]+FL_control_input[0]);
@@ -293,10 +269,10 @@ int main(int argc, const char** argv)
             // printf("err : %f, err_old : %f, err-err_old : %f\n",err,err_old, err-err_old);        
         }
         // printf("%f \n ", d -> time - simstart);
-        if (d->time >= simend) {
-            fclose(fid);
-            break;
-        }
+        // if (d->time >= simend) {
+        //     fclose(fid);
+        //     break;
+        // }
 
         // get framebuffer viewport
         mjrRect viewport = { 0, 0, 0, 0 };

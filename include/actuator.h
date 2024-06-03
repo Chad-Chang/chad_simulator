@@ -11,7 +11,7 @@
 
 #define NUMOFSLAVES 12
 
-// using namespace std;
+using namespace std;
 
 class Actuator
 {
@@ -43,12 +43,16 @@ class Actuator
         double Dterm[NUMOFSLAVES][3]{0,};
 
     public:
+        // constructor
         Actuator(int Motor_num, double motor_init_pos);
+        // actuator data reset
         void DATA_reset();
+        // encoder data read
         void DATA_Receive(mjData* d);
+        // torque input send
         void DATA_Send(mjData* d,double torque);
         
-
+        // private 변수 return
         double getMotor_pos() { return Motor_pos; }; // return first address of Motor_pos
         double getMotor_vel() { return Motor_vel; };
         double getMotor_torque() { return Motor_torque; };
