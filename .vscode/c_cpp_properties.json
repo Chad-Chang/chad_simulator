@@ -4,7 +4,8 @@
             "name": "windows-gcc-x64",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/include/**"
+                "${workspaceFolder}/include/**",
+                "/myproject/mujoco/include/mujoco"
             ],
             "compilerPath": "/usr/bin/g++",
             "cStandard": "c11",
