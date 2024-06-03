@@ -44,4 +44,4 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 # Clean the project
 clean:
-	rm *.o $(ROOT)
+	rm -f *.o $(ROOT)
