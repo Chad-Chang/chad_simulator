@@ -51,10 +51,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     
     if(loop_index % 4 ==0) // sampling time 0.0001
     {   
-        JC_FLHAA.j_set_gain(10,1,0);JC_FRHAA.j_set_gain(10,1,0);JC_RLHAA.j_set_gain(10,1,0);JC_RRHAA.j_set_gain(10,1,0);
+        C_FL.j_set_gain(10,1,0);C_FR.j_set_gain(10,1,0);C_RL.j_set_gain(10,1,0);C_RR.j_set_gain(10,1,0);
 
         t++;
-        JC_FLHAA.j_setDelayData();JC_FRHAA.j_setDelayData();JC_RLHAA.j_setDelayData();JC_RRHAA.j_setDelayData();
+        C_FL.j_setDelayData();C_FR.j_setDelayData();C_RL.j_setDelayData();C_RR.j_setDelayData();
         C_FL.rw_setDelayData(); C_FR.rw_setDelayData(); C_RL.rw_setDelayData(); C_RR.rw_setDelayData();
         K_FL.set_DelayDATA();K_FR.set_DelayDATA();K_RL.set_DelayDATA();K_RR.set_DelayDATA();
         
@@ -142,14 +142,14 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         printf("Motor pose HIP = %f, real = %f\n",ACT_FRKNEE.getMotor_pos(), d->qpos[12]);
     
 
-        // HAA_control_input[0] = JC_FLHAA.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[1] = JC_FRHAA.j_posPID(PI/6,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[2] = JC_RLHAA.j_posPID(PI/6,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[3] = JC_RRHAA.j_posPID(PI/6,ACT_RRHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[0] = JC_FLHAA.j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[1] = JC_FRHAA.j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[2] = JC_RLHAA.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        HAA_control_input[3] = JC_RRHAA.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[0] = C_FL.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[1] = C_FR.j_posPID(PI/2,ACT_FRHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[2] = C_RL.j_posPID(PI/3,ACT_RLHAA.getMotor_pos(),T,cutoff);
+        // HAA_control_input[3] = C_RR.j_posPID(PI/10,ACT_RRHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[0] = C_FL.j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[1] = C_FR.j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
+        HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
         d->qpos[2] = 0.5;
         // d-> qpos[17]= 0;
