@@ -20,7 +20,10 @@ class J_Controller
         double j_posPID(double target, double current_ang, double dt, double cutoff);
         
         // old 값들 update
-        void j_setDelayData(){j_D_term_[1] = j_D_term_[0]; j_I_term_[1] = j_I_term_[0];}
+        void j_setDelayData() {j_D_term_[1] = j_D_term_[0]; j_I_term_[1] = j_I_term_[0];}
+        double j_get_posPgain() {return j_Kp_;}
+        double j_get_posIgain() {return j_Ki_;}
+        double j_get_posDgain() {return j_Kd_;}
 
     private:
         double j_Kp_, j_Kd_, j_Ki_; 

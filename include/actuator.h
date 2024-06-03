@@ -20,7 +20,6 @@ class Actuator
         double target_speed{0};
         double target_position{0};
 
-
         // Initial position //
         double Motor_initial_pos;
         double Motor_pos_offset;

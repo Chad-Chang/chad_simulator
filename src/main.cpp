@@ -6,7 +6,7 @@
 #include "j_controller.h"
 
 RW_Controller C_FL;RW_Controller C_FR;RW_Controller C_RL;RW_Controller C_RR;
-J_Controller JC_FLHAA;J_Controller JC_FRHAA;J_Controller JC_RLHAA;J_Controller JC_RRHAA;
+// J_Controller JC_FLHAA;J_Controller JC_FRHAA;J_Controller JC_RLHAA;J_Controller JC_RRHAA;
 
 // Jacobian
 Matrix2d J_FL;Matrix2d J_FR;Matrix2d J_RL;Matrix2d J_RR;
@@ -39,20 +39,20 @@ Vector2d posRW_err_old_FL;Vector2d posRW_err_old_FR;Vector2d posRW_err_old_RL;Ve
 Vector2d velRW_err;
 
 double HAA_control_input[4];
-double gear_ratio = 1;
+double gear_ratio = 100;
 int t = 0;
-/**************trajecotry time for each legs**************/
 int traj_t = 0;
 
-double err_old = 0;
-double err = 0;
+
 void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 {   
     
     if(loop_index % 4 ==0) // sampling time 0.0001
     {   
-        C_FL.j_set_gain(10,1,0);C_FR.j_set_gain(10,1,0);C_RL.j_set_gain(10,1,0);C_RR.j_set_gain(10,1,0);
-
+        // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
+        C_FL.j_set_gain(10,0,1);C_FR.j_set_gain(10,0,1);C_RL.j_set_gain(10,0,1);C_RR.j_set_gain(10,0,1); // joint controller
+        
+        traj_t ++;
         t++;
         C_FL.j_setDelayData();C_FR.j_setDelayData();C_RL.j_setDelayData();C_RR.j_setDelayData();
         C_FL.rw_setDelayData(); C_FR.rw_setDelayData(); C_RL.rw_setDelayData(); C_RR.rw_setDelayData();
@@ -128,18 +128,18 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         // printf("ACT_RRHAA.getMotor_pos() = %f, real = %f\n",ACT_RRHAA.getMotor_pos(), d->qpos[16]);
         // d->qpos[16] = pi/2;
 
-        printf("Motor pose HAA = %f, real = %f\n",ACT_RRHAA.getMotor_pos(), d->qpos[16]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_RRHIP.getMotor_pos(), d->qpos[17]);
-        printf("Motor pose HAA = %f, real = %f\n",ACT_RRKNEE.getMotor_pos(), d->qpos[18]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_RLHAA.getMotor_pos(), d->qpos[13]);
-        printf("Motor pose HAA = %f, real = %f\n",ACT_RLHIP.getMotor_pos(), d->qpos[14]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_RLKNEE.getMotor_pos(), d->qpos[15]);
-        printf("Motor pose HAA = %f, real = %f\n",ACT_FLHAA.getMotor_pos(), d->qpos[7]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_FLHIP.getMotor_pos(), d->qpos[8]);
-        printf("Motor pose HAA = %f, real = %f\n",ACT_FLKNEE.getMotor_pos(), d->qpos[9]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_FRHAA.getMotor_pos(), d->qpos[10]);
-        printf("Motor pose HAA = %f, real = %f\n",ACT_FRHIP.getMotor_pos(), d->qpos[11]);
-        printf("Motor pose HIP = %f, real = %f\n",ACT_FRKNEE.getMotor_pos(), d->qpos[12]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_RRHAA.getMotor_pos(), d->qpos[16]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_RRHIP.getMotor_pos(), d->qpos[17]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_RRKNEE.getMotor_pos(), d->qpos[18]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_RLHAA.getMotor_pos(), d->qpos[13]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_RLHIP.getMotor_pos(), d->qpos[14]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_RLKNEE.getMotor_pos(), d->qpos[15]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_FLHAA.getMotor_pos(), d->qpos[7]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_FLHIP.getMotor_pos(), d->qpos[8]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_FLKNEE.getMotor_pos(), d->qpos[9]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_FRHAA.getMotor_pos(), d->qpos[10]);
+        // printf("Motor pose HAA = %f, real = %f\n",ACT_FRHIP.getMotor_pos(), d->qpos[11]);
+        // printf("Motor pose HIP = %f, real = %f\n",ACT_FRKNEE.getMotor_pos(), d->qpos[12]);
     
 
         // HAA_control_input[0] = C_FL.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
@@ -165,19 +165,19 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         // d->ctrl[0] = 1;
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]);
-        ACT_FLKNEE.DATA_Send(d,FL_control_input[1]);
+        ACT_FLKNEE.DATA_Send(d,FL_control_input[1]+FL_control_input[0]);
         // d->ctrl[3] = 1;
         ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
         ACT_FRHIP.DATA_Send(d,FR_control_input[0]);
-        ACT_FRKNEE.DATA_Send(d,FR_control_input[1]);
+        ACT_FRKNEE.DATA_Send(d,FR_control_input[1]+FR_control_input[0]);
         // d->ctrl[6] = 1;
         ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
         ACT_RLHIP.DATA_Send(d,RL_control_input[0]);
-        ACT_RLKNEE.DATA_Send(d,RL_control_input[1]);
+        ACT_RLKNEE.DATA_Send(d,RL_control_input[1]+RL_control_input[0]);
         // d->ctrl[9] = 1;
         ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
         ACT_RRHIP.DATA_Send(d,RR_control_input[0]);
-        ACT_RRKNEE.DATA_Send(d,RR_control_input[1]);
+        ACT_RRKNEE.DATA_Send(d,RR_control_input[1]+RR_control_input[0]);
 
         
     }
