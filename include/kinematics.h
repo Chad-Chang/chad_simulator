@@ -1,6 +1,9 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
+#include <iostream>
+
 using namespace Eigen;
+using namespace std;
 
 class Kinematics
 {   

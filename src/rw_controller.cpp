@@ -47,6 +47,7 @@ double RW_Controller::rw_posPID(Vector2d posRW_err, Vector2d posRW_err_old, int 
                                                                            // 특정해주면 그 부분의 value가 된다.(이건 그냥 c++ 문법)
   RW_posPID_output[idx] = RW_Pos_P_term[idx][0] + RW_Pos_D_term[idx][0] + RW_Pos_I_term[idx][0];
   
+  
   rw_setDelayData();
   return RW_posPID_output[idx];
   //

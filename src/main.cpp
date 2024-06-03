@@ -37,6 +37,12 @@ Vector2d posRW_err_FL;Vector2d posRW_err_FR;Vector2d posRW_err_RL;Vector2d posRW
 
 Vector2d posRW_err_old_FL;Vector2d posRW_err_old_FR;Vector2d posRW_err_old_RL;Vector2d posRW_err_old_RR;
 Vector2d velRW_err;
+Vector4d r_Pgain = {40,40,40,40};
+Vector4d r_Igain = {0,0,0,0};
+Vector4d r_Dgain = {0,0,0,0};
+Vector4d th_Pgain = {40,40,40,40};
+Vector4d th_Igain = {0,0,0,0};
+Vector4d th_Dgain = {0,0,0,0};
 
 double HAA_control_input[4];
 double gear_ratio = 100;
@@ -51,7 +57,8 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     {   
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
         C_FL.j_set_gain(10,0,1);C_FR.j_set_gain(10,0,1);C_RL.j_set_gain(10,0,1);C_RR.j_set_gain(10,0,1); // joint controller
-        
+        C_FL.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
+
         traj_t ++;
         t++;
         C_FL.j_setDelayData();C_FR.j_setDelayData();C_RL.j_setDelayData();C_RR.j_setDelayData();
@@ -66,10 +73,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         /****************** Kinematics ******************/
         
-        K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos(),0);
-        K_FR.Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos(),1);
-        K_RL.Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos(),2);
-        K_RR.Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos(),3);
+        K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),0);
+        K_FR.Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos(),1);
+        K_RL.Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos(),2);
+        K_RR.Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos(),3);
           
         J_FL = K_FL.get_RW_Jacobian();J_FR = K_FR.get_RW_Jacobian();J_RL = K_RL.get_RW_Jacobian();J_RR= K_RR.get_RW_Jacobian();
           
@@ -77,7 +84,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         /****************** Trajectory ******************/
         
-        K_FL.pos_trajectory(traj_t, 0);         K_FR.pos_trajectory(traj_t, 1);         K_RL.pos_trajectory(traj_t, 2);         K_RR.pos_trajectory(traj_t, 3); 
+        K_FL.pos_trajectory(traj_t, 0); K_FR.pos_trajectory(traj_t, 1); K_RL.pos_trajectory(traj_t, 2); K_RR.pos_trajectory(traj_t, 3); 
         
         /****************** State ******************/ // pos RW
         
@@ -161,7 +168,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         // d-> qpos[9]= 0;
         // d-> qpos[12]= 0;
         // d-> qpos[11]= 0;
-
+        cout << "FL = " << d-> sensordata[46] << endl;
+        cout << "FR = " << d-> sensordata[49] << endl;
+        cout << "RL = " << d-> sensordata[52] << endl;
+        cout << "RR = " << d-> sensordata[55] << endl;
         // d->ctrl[0] = 1;
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]);
