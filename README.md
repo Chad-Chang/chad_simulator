@@ -1,0 +1,1 @@
+It is quad template
