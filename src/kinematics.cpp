@@ -4,26 +4,42 @@ Kinematics::Kinematics() {
 
 }
 
-// 다리별로 R과 theta의 값을 계산
+// 다리별로 R과 theta의 값을 계산 => biarticular joint vel -> rotating vel
 void Kinematics::Cal_RW(double thm, double thb, int Leg_num)
 {
 
   double th2 = thb - thm;
-  
+
+  // biarticular to rotating position space
   Jacobian(0, 0) = sin(th2 / 2);
   Jacobian(0, 1) = -sin(th2 / 2);
   Jacobian(1, 0) = cos(th2 / 2);
   Jacobian(1, 1) = cos(th2 / 2);
 
+
   Jacobian = L * Jacobian;
   JacobianTrans = Jacobian.transpose();
-  
+  Jacobian_inv = Jacobian.inverse();
+  JacobianTrans_inv = JacobianTrans.inverse();
   posRW[0] = 2 * L * cos((thb - thm) / 2);
   posRW[1] = 0.5 * (thm + thb);
   
   r_posRW[Leg_num] = posRW[0];
   th_posRW[Leg_num] = posRW[1];
 
+}
+
+void Kinematics::Cal_RW_inertia(double thm, double thb)
+{
+  // Jacobian
+  double th2 = thb - thm;
+  A(0,0) = Izz_thigh+m_shank*pow(L,2);
+  A(0,1) = m_shank*L*d_shank*cos(th2);
+  A(1,1) = m_shank*L*d_shank*cos(th2);
+  A(1,1) = Izz_shank;
+  Lambda = JacobianTrans_inv*A*Jacobian_inv;
+  
+  
 }
 
 // 이전 값들 업데이트

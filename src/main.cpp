@@ -147,7 +147,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        // d->qpos[2] = 0.5;
+        d->qpos[2] = 0.5;
 
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]);
@@ -244,9 +244,17 @@ int main(int argc, const char** argv)
     fid = fopen(datafile, "w");
     init_save_data();
 
-// 초기 각도 입력    
+// 초기 각도 입력    0.546812);Actuator ACT_RLKNEE(3, 2.59478)
+    
+   d->qpos[8] = 0.546812;
+   d->qpos[9] = 2.59478;
+   d->qpos[11] = 0.546812;
+   d->qpos[12] = 2.59478;
+   d->qpos[14] = 0.546812;
+   d->qpos[15] = 2.59478;
+   d->qpos[17] = 0.546812;
+   d->qpos[18] = 2.59478;
 
-   
 
     // use the first while condition if you want to simulate for a period.
     while (!glfwWindowShouldClose(window)) // 주기 : 0.0167
