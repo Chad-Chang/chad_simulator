@@ -64,10 +64,11 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
 {
   
   // r direction
-  double f1 = 1;
-  double f2 = 0.05;
-  double f3 = 0.07;
-  double f4 = 0.1;
+  // double f1 = 1;
+  // double f2 = 0.05;
+  // double f3 = 0.07;
+  double f = 0.1;
+
   
   
   //Leg_Num = FL(0), FR(1), RL(2), RR(3) 
@@ -75,7 +76,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
   {
     case 0: // FL position trajectory
     {
-      ref_r_pos[0] = 0.1*sin(2*PI*f1*0.001*traj_t) + L;
+      ref_r_pos[0] = 0.1*sin(2*PI*f*0.001*traj_t) + L;
       ref_th_pos[0] = PI/2;
       posRW_error[0][0] = ref_r_pos[0] - posRW[0];
       posRW_error[1][0] = ref_th_pos[0] - posRW[1];
@@ -86,7 +87,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
 
     case 1: // FR position trajectory
     {
-      ref_r_pos[1] = 0.1*sin(2*PI*f2*0.001*traj_t) + L;
+      ref_r_pos[1] = 0.1*sin(2*PI*f*0.001*traj_t) + L;
       ref_th_pos[1] = PI/2;
       posRW_error[0][0] = ref_r_pos[1] - posRW[0];
       posRW_error[1][0] = ref_th_pos[1] - posRW[1];
@@ -97,7 +98,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
     }
     case 2: // RL position trajectory
     {
-      ref_r_pos[2] = 0.1*sin(2*PI*f3*0.001*traj_t) + L;
+      ref_r_pos[2] = 0.1*sin(2*PI*f*0.001*traj_t) + L;
       ref_th_pos[2] = PI/2;
       posRW_error[0][0] = ref_r_pos[2] - posRW[0];
       posRW_error[1][0] = ref_th_pos[2] - posRW[1];
@@ -108,7 +109,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
 
     case 3: // RR position trajectory
     {
-      ref_r_pos[3] = 0.1*sin(2*PI*f4*0.001*traj_t) + L;
+      ref_r_pos[3] = 0.1*sin(2*PI*f*0.001*traj_t) + L;
       ref_th_pos[3] = PI/2;
       posRW_error[0][0] = ref_r_pos[3] - posRW[0];
       posRW_error[1][0] = ref_th_pos[3] - posRW[1];

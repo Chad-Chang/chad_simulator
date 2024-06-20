@@ -147,7 +147,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        d->qpos[2] = 0.5;
+        // d->qpos[2] = 0.5;
 
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]);
