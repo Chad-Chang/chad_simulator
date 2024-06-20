@@ -1,0 +1,54 @@
+Thu Jun 20 12:08:50 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:10:12 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:11:12 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:11:30 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:13:37 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:13:58 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:15:33 2024
+ERROR: Load model error: XML parse error 3:
+Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: filename=data/scene.xml
+
+
+Thu Jun 20 12:21:18 2024
+ERROR: Load model error: Error: could not open STL file '../data/assets/meshes/trunk.STL'
+Object name = trunk, id = 0, line = 0, column = -1
+
+Thu Jun 20 12:23:47 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Jun 20 12:28:39 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Jun 20 12:30:40 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Jun 20 12:32:20 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Jun 20 12:41:06 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
