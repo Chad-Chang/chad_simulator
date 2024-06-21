@@ -82,7 +82,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
   // double f1 = 1;
   // double f2 = 0.05;
   // double f3 = 0.07;
-  double f = 0.01;
+  double f = 0.0;
 
   
   

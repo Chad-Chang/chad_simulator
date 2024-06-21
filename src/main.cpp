@@ -185,10 +185,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         /****************** Put the torque in Motor ******************/
         
-        FL_control_input = - QFL_input_DOB + gear_ratio * JTrans_FL * FL_output; FR_control_input = - QFR_input_DOB + gear_ratio * JTrans_FR * FR_output;
-        RL_control_input = - QRL_input_DOB + gear_ratio * JTrans_RL * RL_output; RR_control_input = - QRR_input_DOB + gear_ratio * JTrans_RR * RR_output;
+        FL_control_input = QFL_input_DOB + gear_ratio * JTrans_FL * FL_output; FR_control_input = QFR_input_DOB + gear_ratio * JTrans_FR * FR_output;
+        RL_control_input = QRL_input_DOB + gear_ratio * JTrans_RL * RL_output; RR_control_input = QRR_input_DOB + gear_ratio * JTrans_RR * RR_output;
 
-        cout << QFL_input_DOB(0)<< FL_control_input(0)<<endl;
+        // cout << QFL_input_DOB(0)<< FL_control_input(0)<<endl;
         // 여기 disturbance 
         FL_input_DOB = - FL_distub + FL_control_input; FR_input_DOB = - FR_distub + FR_control_input;
         RL_input_DOB = - RL_distub + RL_control_input; RR_input_DOB = - RR_distub + RR_control_input;
@@ -225,7 +225,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         QRR_input_DOB(0) = lowpassfilter(RR_input_DOB(0),RR_input_DOB_old(0),QRR_input_DOB_old(0),120); 
         QRR_input_DOB(1) = lowpassfilter(RR_input_DOB(1),RR_input_DOB_old(1),QRR_input_DOB_old(1),120);
 
-
+    
         
         /*******************HAA position control input*******************/
 
@@ -238,7 +238,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
- 
+        d-> qpos[2] = 0.5;
         // 입력 토크
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]+FL_control_input[1]+disturbance);
@@ -346,7 +346,7 @@ int main(int argc, const char** argv)
     cam.lookat[0] = arr_view[3];
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
-
+    
     // qpos is dim xq x 1 = 7 x 1; 3 translations + 4 quaternions
     
     // custom controller
