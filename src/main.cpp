@@ -192,7 +192,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         RL_control_input = gear_ratio * JTrans_RL * RL_output; RR_control_input = gear_ratio * JTrans_RR * RR_output;
         
 
-        if(!DOB_on){FL_control_input <<0,0; FR_control_input <<0,0;RL_control_input<<0,0;RR_control_input <<0,0;}
+        if(DOB_on){FL_control_input <<0,0; FR_control_input <<0,0;RL_control_input<<0,0;RR_control_input <<0,0;}
 
 
         // 여기 disturbance 
@@ -201,17 +201,17 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
         disturbance = 1*sin(0.001*t);
         // joint space acceleration
-        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),30);
-        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),30);
+        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),130);
+        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),130);
 
-        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),30);
-        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),30);
+        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),130);
+        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),130);
 
-        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),30);
-        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),30);
+        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),130);
+        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),130);
 
-        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),30);
-        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),30);
+        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),130);
+        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),130);
 
         // biarticular joint space acceleration
         FL_distub = inertia_jBi2BiTq_FL*jnt2bi*th_acc_FL; // biarticular torque mapping 
@@ -219,17 +219,17 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         RL_distub = inertia_jBi2BiTq_RL*jnt2bi*th_acc_RL;
         RR_distub = inertia_jBi2BiTq_RR*jnt2bi*th_acc_RR;
 
-        QFL_input_DOB(0) = lowpassfilter(FL_input_DOB(0),FL_input_DOB_old(0),QFL_input_DOB_old(0),20); 
-        QFL_input_DOB(1) = lowpassfilter(FL_input_DOB(1),FL_input_DOB_old(1),QFL_input_DOB_old(1),20);
+        QFL_input_DOB(0) = lowpassfilter(FL_input_DOB(0),FL_input_DOB_old(0),QFL_input_DOB_old(0),120); 
+        QFL_input_DOB(1) = lowpassfilter(FL_input_DOB(1),FL_input_DOB_old(1),QFL_input_DOB_old(1),120);
         
-        QFR_input_DOB(0) = lowpassfilter(FR_input_DOB(0),FR_input_DOB_old(0),QFR_input_DOB_old(0),20); 
-        QFR_input_DOB(1) = lowpassfilter(FR_input_DOB(1),FR_input_DOB_old(1),QFR_input_DOB_old(1),20);
+        QFR_input_DOB(0) = lowpassfilter(FR_input_DOB(0),FR_input_DOB_old(0),QFR_input_DOB_old(0),120); 
+        QFR_input_DOB(1) = lowpassfilter(FR_input_DOB(1),FR_input_DOB_old(1),QFR_input_DOB_old(1),120);
         
-        QRL_input_DOB(0) = lowpassfilter(RL_input_DOB(0),RL_input_DOB_old(0),QRL_input_DOB_old(0),20); 
-        QRL_input_DOB(1) = lowpassfilter(RL_input_DOB(1),RL_input_DOB_old(1),QRL_input_DOB_old(1),20);
+        QRL_input_DOB(0) = lowpassfilter(RL_input_DOB(0),RL_input_DOB_old(0),QRL_input_DOB_old(0),120); 
+        QRL_input_DOB(1) = lowpassfilter(RL_input_DOB(1),RL_input_DOB_old(1),QRL_input_DOB_old(1),120);
 
-        QRR_input_DOB(0) = lowpassfilter(RR_input_DOB(0),RR_input_DOB_old(0),QRR_input_DOB_old(0),20); 
-        QRR_input_DOB(1) = lowpassfilter(RR_input_DOB(1),RR_input_DOB_old(1),QRR_input_DOB_old(1),20);
+        QRR_input_DOB(0) = lowpassfilter(RR_input_DOB(0),RR_input_DOB_old(0),QRR_input_DOB_old(0),120); 
+        QRR_input_DOB(1) = lowpassfilter(RR_input_DOB(1),RR_input_DOB_old(1),QRR_input_DOB_old(1),120);
 
         
         // QFL_distub(0) = lowpassfilter(FL_distub(0),FL_distub_old(0),QFL_distub(0),20); 
@@ -258,22 +258,25 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         d->qpos[2] = 0.5;
 
+        FL_control_input = FL_control_input - QFL_input_DOB; FR_control_input = FR_control_input - QFR_input_DOB;
+        RL_control_input = RL_control_input - QRL_input_DOB; RR_control_input = RR_control_input - QRR_input_DOB;
+        
         // 입력 토크
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
-        ACT_FLHIP.DATA_Send(d,QFL_input_DOB[0]+QFL_input_DOB[1]+disturbance);
-        ACT_FLKNEE.DATA_Send(d,QFL_input_DOB[1]);
+        ACT_FLHIP.DATA_Send(d,FL_control_input[0]+FL_control_input[1]+disturbance);
+        ACT_FLKNEE.DATA_Send(d,FL_control_input[1]);
         // d->ctrl[3] = 1;
         ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
-        ACT_FRHIP.DATA_Send(d,QFR_input_DOB[0]+QFR_input_DOB[1]+disturbance);
-        ACT_FRKNEE.DATA_Send(d,QFR_input_DOB[1]);
+        ACT_FRHIP.DATA_Send(d,FR_control_input[0]+FR_control_input[1]+disturbance);
+        ACT_FRKNEE.DATA_Send(d,FR_control_input[1]);
         // d->ctrl[6] = 1;
         ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
-        ACT_RLHIP.DATA_Send(d,QRL_input_DOB[0]+QRL_input_DOB[1]+disturbance);
-        ACT_RLKNEE.DATA_Send(d,QRL_input_DOB[1]);
+        ACT_RLHIP.DATA_Send(d,RL_control_input[0]+RL_control_input[1]+disturbance);
+        ACT_RLKNEE.DATA_Send(d,RL_control_input[1]);
         // d->ctrl[9] = 1;
         ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
-        ACT_RRHIP.DATA_Send(d,QRR_input_DOB[0]+QRR_input_DOB[1]+disturbance);
-        ACT_RRKNEE.DATA_Send(d,QRR_input_DOB[1]);
+        ACT_RRHIP.DATA_Send(d,RR_control_input[0]+RR_control_input[1]+disturbance);
+        ACT_RRKNEE.DATA_Send(d,RR_control_input[1]);
 
         // ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         // ACT_FLHIP.DATA_Send(d,FL_control_input_DOB[0]+FL_control_input_DOB[1]+disturbance);

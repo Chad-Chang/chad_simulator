@@ -18,7 +18,7 @@ using namespace Eigen;
 // #define G 9.81
 double PI = 3.141592;
 double T = 0.001;
-extern bool DOB_on = 1;
+extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
 double disturbance;
