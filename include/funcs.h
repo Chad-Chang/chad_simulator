@@ -141,7 +141,7 @@ void save_data(const mjModel* m, mjData* d)
     
     fprintf(fid, "%f, ", d->time);
     fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0)); // hip에서만 측정
-    printf("%f, %f, %f, %f, %f,\n", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0));
+    // printf("%f, %f, %f, %f, %f,\n", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0));
     //Don't remove the newline
     fprintf(fid, "\n");
 }

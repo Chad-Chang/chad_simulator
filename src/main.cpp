@@ -116,9 +116,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         th_vel_RL(0) = ACT_RLHIP.getMotor_vel(); th_vel_RL(1) = ACT_RLKNEE.getMotor_vel();
         th_vel_RR(0) = ACT_RRHIP.getMotor_vel(); th_vel_RR(1) = ACT_RRKNEE.getMotor_vel();
 
-        // cout<< th_vel_FL(0)  << " "<<th_vel_FR(0) << " "<<th_vel_RL(0) <<  " "<<th_vel_RR(0) << endl;
-        // cout<< th_vel_FL(1)  << " "<<th_vel_FR(1) << " "<<th_vel_RL(1) <<  " "<<th_vel_RR(1) << endl;
-
         /****************** Kinematics ******************/
         ////////////////////// 바이아티큘러 구조일때 - real robot////////////////////////
         // K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos(),0); 
@@ -191,7 +188,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         FL_control_input = - QFL_input_DOB + gear_ratio * JTrans_FL * FL_output; FR_control_input = - QFR_input_DOB + gear_ratio * JTrans_FR * FR_output;
         RL_control_input = - QRL_input_DOB + gear_ratio * JTrans_RL * RL_output; RR_control_input = - QRR_input_DOB + gear_ratio * JTrans_RR * RR_output;
 
-
+        cout << QFL_input_DOB(0)<< FL_control_input(0)<<endl;
         // 여기 disturbance 
         FL_input_DOB = - FL_distub + FL_control_input; FR_input_DOB = - FR_distub + FR_control_input;
         RL_input_DOB = - RL_distub + RL_control_input; RR_input_DOB = - RR_distub + RR_control_input;
@@ -228,18 +225,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         QRR_input_DOB(0) = lowpassfilter(RR_input_DOB(0),RR_input_DOB_old(0),QRR_input_DOB_old(0),120); 
         QRR_input_DOB(1) = lowpassfilter(RR_input_DOB(1),RR_input_DOB_old(1),QRR_input_DOB_old(1),120);
 
-        
-        // QFL_distub(0) = lowpassfilter(FL_distub(0),FL_distub_old(0),QFL_distub(0),20); 
-        // QFL_distub(1) = lowpassfilter(FL_distub(1),FL_distub_old(1),QFL_distub(1),20);
-        
-        // QFR_distub(0) = lowpassfilter(FR_distub(0),FR_distub_old(0),QFR_distub(0),20); 
-        // QFR_distub(1) = lowpassfilter(FR_distub(1),FR_distub_old(1),QFR_distub(1),20);
-        
-        // QRL_distub(0) = lowpassfilter(RL_distub(0),RL_distub_old(0),QRL_distub(0),20); 
-        // QRL_distub(1) = lowpassfilter(RL_distub(1),RL_distub_old(1),QRL_distub(1),20);
-
-        // QRR_distub(0) = lowpassfilter(RR_distub(0),RR_distub_old(0),QRR_distub(0),20); 
-        // QRR_distub(1) = lowpassfilter(RR_distub(1),RR_distub_old(1),QRR_distub(1),20);
 
         
         /*******************HAA position control input*******************/
@@ -253,11 +238,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        // d->qpos[2] =;
-
-        FL_control_input = FL_control_input - QFL_input_DOB; FR_control_input = FR_control_input - QFR_input_DOB;
-        RL_control_input = RL_control_input - QRL_input_DOB; RR_control_input = RR_control_input - QRR_input_DOB;
-        
+ 
         // 입력 토크
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
         ACT_FLHIP.DATA_Send(d,FL_control_input[0]+FL_control_input[1]+disturbance);
