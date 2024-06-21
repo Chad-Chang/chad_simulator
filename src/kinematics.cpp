@@ -31,30 +31,14 @@ void Kinematics::Cal_RW(double thm, double thb, int Leg_num)
   th_posRW[Leg_num] = posRW[1];
 }
 
-Matrix2d Kinematics::Cal_RW_inertia(double thm, double thb)
+Matrix2d Kinematics::Cal_RW_inertia(double thm, double thb) // Jr Lamda Jr
 {
   // Jacobian
   double th2 = thb - thm;
-  A(0,0) = Izz_thigh+m_shank*pow(L,2);
-  A(0,1) = m_shank*L*d_shank*cos(th2);
-  A(1,1) = m_shank*L*d_shank*cos(th2);
-  A(1,1) = Izz_shank;
-  // Lambda_R = RWJacobianTrans_inv*A*RWJacobian_inv; // roating workspa
-  // 오세훈 교수님 논문 참조
-  double frac_RW_J1 = A(0,0) - 2* A(0,1) +A(1,1);
-  double frac_RW_J2 = A(0,0) + 2* A(0,1) +A(1,1);
-  double frac_RW_Jm = A(0,0) +A(1,1);  
-  // 이 람다 : RW 좌표계에서의 xy를 기준으로함.
-  Lambda_R(0,0) = frac_RW_J1/pow(sin(th2/2),2);
-  Lambda_R(0,1) = frac_RW_Jm/sin(th2/2);
-  Lambda_R(1,0) = Lambda_R(0,1);
-  Lambda_R(1,1) = frac_RW_J2/pow(cos(th2/2),2);
-  Lambda_R = Lambda_R*1/(2*pow(L,2));
-
-  Matrix2d Lambda_R_nomi;
-  Lambda_R_nomi << Lambda_R(0,0)/2, 0,0,Lambda_R(1,1)/2;
-  
-  return Lambda_R_nomi;
+  RWfrac_J1 = Izz_thigh + m_thigh * pow(d_thigh, 2) + Izz_shank + m_shank * pow(d_shank, 2) + m_shank * pow(L, 2) - 2 * m_shank * d_shank * L * cos(th2);
+  RWfrac_J2 = Izz_thigh + m_thigh * pow(d_thigh, 2) + Izz_shank + m_shank * pow(d_shank, 2) + m_shank * pow(L, 2) + 2 * m_shank * d_shank * L * cos(th2);
+  Lambda_RW_momi << RWfrac_J1/(4 * pow(L, 2) * pow(sin(th2 / 2), 2)) ,0 ,0 ,RWfrac_J2/(4 * pow(L, 2) * pow(cos(th2/ 2), 2));
+  return Lambda_RW_momi;
 }
 
 // 이전 값들 업데이트

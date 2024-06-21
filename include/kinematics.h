@@ -41,14 +41,17 @@ class Kinematics
 
         double Izz_thigh = 0.0057;
         double Izz_shank = 8.0318e-04;
+
+        double RWfrac_J1;
+        double RWfrac_J2;
+        double RWfrac_Jm;
         //******************
         Matrix2d RWJacobian;
         Matrix2d RWJacobianTrans;
         Matrix2d RWJacobian_inv;
         Matrix2d RWJacobianTrans_inv;
-        Matrix2d RW_Matrix;
-        Matrix2d A;
-        Matrix2d Lambda_R;
+
+        Matrix2d Lambda_RW_momi; // RW position inertia matrix
 
         Matrix2d jnt2bi; 
         Matrix2d bi2jnt;

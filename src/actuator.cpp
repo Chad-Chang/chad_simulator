@@ -35,77 +35,9 @@ void Actuator::DATA_Receive(mjData* d) //Motor_num은 class를 선언할 때 Eth
   else if(Motor_Num == 11) {Motor_pos = d->qpos[10]; Motor_vel = d->qvel[10]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[10]);}
   // spine
   // else if(Motor_Num == 12) {Motor_pos = d->qpos[17]; printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
-  
 
-  // switch(Motor_Num)
-  // { 
-  //   // RR
-  //   case 0://haa RR
-  //   {
-  //     Motor_pos = d->qpos[16];
-  //     cout << "aaaaaaaa" <<endl;
-      
-      
-  //   }
-  //   case 1:
-  //   {
-  //     Motor_pos = d->qpos[17];
-      
-  //   }
-  //   case 2:
-  //   { Motor_pos = d->qpos[18];
-      
-  //     }
-
-  //   // // RL 
-  //   // case 3:{
-  //   //   Motor_pos = d->qpos[15];
-      
-  //   //   }
-  //   // case 4:{
-  //   //   Motor_pos = d->qpos[14];
-      
-  //   //   }
-      
-  //   // case 5://haa RL
-  //   //  { Motor_pos = d->qpos[13];
-      
-  //   // }
-
-  //   // FL
-  //   case 6:{//haa FL
-  //     Motor_pos = d->qpos[7];
-  //     }
-  //   case 7:{
-  //     Motor_pos = d->qpos[8];
-     
-  //     }
-  //   case 8:{
-  //     Motor_pos = d->qpos[9];
-  //    }
-    
-  //   // // FR
-  //   // case 9:{
-  //   //   Motor_pos = d->qpos[12];
-      
-  //   //   }
-  //   // case 10:{
-  //   //   Motor_pos = d->qpos[11];
-     
-  //   //   }
-  //   // case 11:{//haa FR
-  //   //   Motor_pos = d->qpos[10];
-  //   //  }
-  //   // // spine
-  //   // case 13:{
-  //   //   Motor_pos = d->qpos[13];
-  //   // }
-  //   default:{break;}
   }
-  // cout<<"Motor num =  " << Motor_Num << "qpos = " << Motor_pos <<endl;
-  // cout << "real qpos "<< d->qpos[7] << "  "<< d->qpos[11] << "  " << d->qpos[13] << "  "<< d->qpos[16] << "  "<<endl;
 
-// }
 
 void Actuator::DATA_Send(mjData* d, double torque) //
 {
