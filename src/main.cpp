@@ -188,11 +188,8 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         /****************** Put the torque in Motor ******************/
         
-        FL_control_input = gear_ratio * JTrans_FL * FL_output; FR_control_input = gear_ratio * JTrans_FR * FR_output;
-        RL_control_input = gear_ratio * JTrans_RL * RL_output; RR_control_input = gear_ratio * JTrans_RR * RR_output;
-        
-
-        if(DOB_on){FL_control_input <<0,0; FR_control_input <<0,0;RL_control_input<<0,0;RR_control_input <<0,0;}
+        FL_control_input = - QFL_input_DOB + gear_ratio * JTrans_FL * FL_output; FR_control_input = - QFR_input_DOB + gear_ratio * JTrans_FR * FR_output;
+        RL_control_input = - QRL_input_DOB + gear_ratio * JTrans_RL * RL_output; RR_control_input = - QRR_input_DOB + gear_ratio * JTrans_RR * RR_output;
 
 
         // 여기 disturbance 
@@ -256,7 +253,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        d->qpos[2] = 0.5;
+        // d->qpos[2] =;
 
         FL_control_input = FL_control_input - QFL_input_DOB; FR_control_input = FR_control_input - QFR_input_DOB;
         RL_control_input = RL_control_input - QRL_input_DOB; RR_control_input = RR_control_input - QRR_input_DOB;
