@@ -18,7 +18,7 @@ using namespace Eigen;
 // #define G 9.81
 double PI = 3.141592;
 double T = 0.001;
-
+extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
 double disturbance;
@@ -138,9 +138,10 @@ void save_data(const mjModel* m, mjData* d)
 {   
     //data here should correspond to headers in init_save_data()
     //seperate data by a space %f followed by space
+    
     fprintf(fid, "%f, ", d->time);
     fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0)); // hip에서만 측정
-    
+    printf("%f, %f, %f, %f, %f,\n", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0));
     //Don't remove the newline
     fprintf(fid, "\n");
 }

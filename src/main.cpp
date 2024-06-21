@@ -184,28 +184,31 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         FL_control_input = gear_ratio * JTrans_FL * FL_output; FR_control_input = gear_ratio * JTrans_FR * FR_output;
         RL_control_input = gear_ratio * JTrans_RL * RL_output; RR_control_input = gear_ratio * JTrans_RR * RR_output;
         
-        FL_control_input << 0,0; FR_control_input << 0,0;
-        RL_control_input << 0,0; RR_control_input << 0,0;
+        // FL_control_input << 0,0; FR_control_input << 0,0;
+        // RL_control_input << 0,0; RR_control_input << 0,0;
         
-        // 여기 disturbance 값에 gear ratio를 곱해야 하나(곱해야 할꺼같은디)
+        if(!DOB_on){QFL_distub <<0,0; QFR_distub <<0,0;QRL_distub<<0,0;QRR_distub <<0,0;}
+
+
+        // 여기 disturbance 
         FL_control_input_DOB = - QFL_distub + FL_control_input; FR_control_input_DOB = - QFR_distub + FR_control_input;
         RL_control_input_DOB = - QRL_distub + RL_control_input; RR_control_input_DOB = - QRR_distub + RR_control_input;
 
         disturbance = 1*sin(0.001*traj_t);
-        cout << disturbance<< endl;
-        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),120);
-        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),120);
+        // joint space acceleration
+        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),130);
+        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),130);
 
-        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),120);
-        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),120);
+        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),130);
+        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),130);
 
-        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),120);
-        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),120);
+        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),130);
+        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),130);
 
-        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),120);
-        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),120);
+        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),130);
+        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),130);
 
-        
+        // biarticular joint space acceleration
         FL_distub = inertia_jBi2BiTq_FL*jnt2bi*th_acc_FL; // biarticular torque mapping 
         FR_distub = inertia_jBi2BiTq_FR*jnt2bi*th_acc_FR;
         RL_distub = inertia_jBi2BiTq_RL*jnt2bi*th_acc_RL;
@@ -236,7 +239,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        d->qpos[2] = 0.5;
+        // d->qpos[2] = 0.5;
 
         // // 입력 토크
         // ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
