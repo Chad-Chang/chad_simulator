@@ -8,6 +8,7 @@
 using namespace Eigen;
 using namespace std;
 
+extern double a;
 // joint controller와 함수 형태나 형식 유사하게 만들기
 class RW_Controller : public J_Controller
 {
@@ -15,7 +16,7 @@ class RW_Controller : public J_Controller
     double cutoff_freq = 150; 
     double PI = 3.141592;
     double T = 0.001;
-
+    
     // PID //
     Vector4d RW_r_posPgain = {40,40,40,40}; // FL FR RL RR leg
     Vector4d RW_r_posIgain;

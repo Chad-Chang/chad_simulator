@@ -1,7 +1,9 @@
 clear all
 clc
 close all
-filename = 'data.csv';
+
+cd '/home/chad/Documents/mujoco/projects/chad_simulator/data'
+filename = '/ROBOT_DOB.csv';
 
 T = readtable(filename); %check T.Properties
 VariableNames = T.Properties.VariableNames;
@@ -9,13 +11,18 @@ VariableNames = T.Properties.VariableNames;
 Arr = table2array(T);
 [m,n] = size(Arr);
 
-for i=2:n
-    figure(i)
-    yy = i;
-    plot(Arr(:,yy),'r');
-    ylabel(cell2mat(VariableNames(yy)))
+% for i=2:n
+%     figure(i)
 %     yy = i;
-%     plot(Arr(:,1),Arr(:,yy),'r');
+%     plot(Arr(:,yy),'r');
 %     ylabel(cell2mat(VariableNames(yy)))
-%     xlabel(cell2mat(VariableNames(1)))
-end
+% %     yy = i;
+% %     plot(Arr(:,1),Arr(:,yy),'r');
+% %     ylabel(cell2mat(VariableNames(yy)))
+% %     xlabel(cell2mat(VariableNames(1)))
+% end
+
+figure(1);
+plot(Arr(:,1),Arr(:,2), 'r-' ,Arr(:,1), Arr(:,4), 'b-');
+ylabel(cell2mat(VariableNames(2)))
+legend('ref','FL_hip')

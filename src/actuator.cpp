@@ -22,17 +22,17 @@ void Actuator::DATA_reset() //
 void Actuator::DATA_Receive(mjData* d) //Motor_num은 class를 선언할 때 Ethercat 통신 순서대로 이미 정해줌
 { 
   if(Motor_Num == 0) {Motor_pos = d->qpos[16]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[16]);}
-  else if(Motor_Num == 1) {Motor_pos = d->qpos[17]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
-  else if(Motor_Num == 2) {Motor_pos = d->qpos[18]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[18]);}
-  else if(Motor_Num == 3) {Motor_pos = d->qpos[15]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[15]);}
-  else if(Motor_Num == 4) {Motor_pos = d->qpos[14]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[14]);}
-  else if(Motor_Num == 5) {Motor_pos = d->qpos[13]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[13]);}
-  else if(Motor_Num == 6) {Motor_pos = d->qpos[7]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[7]);}
-  else if(Motor_Num == 7) {Motor_pos = d->qpos[8]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[8]);}
-  else if(Motor_Num == 8) {Motor_pos = d->qpos[9]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[9]);}
-  else if(Motor_Num == 9) {Motor_pos = d->qpos[12]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[12]);}
-  else if(Motor_Num == 10) {Motor_pos = d->qpos[11]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[11]);}
-  else if(Motor_Num == 11) {Motor_pos = d->qpos[10]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[10]);}
+  else if(Motor_Num == 1) {Motor_pos = d->qpos[17]; Motor_vel = d->qvel[17]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
+  else if(Motor_Num == 2) {Motor_pos = d->qpos[18]; Motor_vel = d->qvel[18]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[18]);}
+  else if(Motor_Num == 3) {Motor_pos = d->qpos[15]; Motor_vel = d->qvel[15]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[15]);}
+  else if(Motor_Num == 4) {Motor_pos = d->qpos[14]; Motor_vel = d->qvel[14]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[14]);}
+  else if(Motor_Num == 5) {Motor_pos = d->qpos[13]; Motor_vel = d->qvel[13]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[13]);}
+  else if(Motor_Num == 6) {Motor_pos = d->qpos[7]; Motor_vel = d->qvel[7]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[7]);}
+  else if(Motor_Num == 7) {Motor_pos = d->qpos[8]; Motor_vel = d->qvel[8]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[8]);}
+  else if(Motor_Num == 8) {Motor_pos = d->qpos[9]; Motor_vel = d->qvel[9]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[9]);}
+  else if(Motor_Num == 9) {Motor_pos = d->qpos[12]; Motor_vel = d->qvel[12]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[12]);}
+  else if(Motor_Num == 10) {Motor_pos = d->qpos[11]; Motor_vel = d->qvel[11]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[11]);}
+  else if(Motor_Num == 11) {Motor_pos = d->qpos[10]; Motor_vel = d->qvel[10]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[10]);}
   // spine
   // else if(Motor_Num == 12) {Motor_pos = d->qpos[17]; printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
   

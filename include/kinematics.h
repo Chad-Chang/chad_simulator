@@ -42,13 +42,16 @@ class Kinematics
         double Izz_thigh = 0.0057;
         double Izz_shank = 8.0318e-04;
         //******************
-        Matrix2d Jacobian;
-        Matrix2d JacobianTrans;
-        Matrix2d Jacobian_inv;
-        Matrix2d JacobianTrans_inv;
+        Matrix2d RWJacobian;
+        Matrix2d RWJacobianTrans;
+        Matrix2d RWJacobian_inv;
+        Matrix2d RWJacobianTrans_inv;
         Matrix2d RW_Matrix;
         Matrix2d A;
-        Matrix2d Lambda;
+        Matrix2d Lambda_R;
+
+        Matrix2d jnt2bi; 
+        Matrix2d bi2jnt;
 
   public:
     Kinematics();
@@ -61,17 +64,15 @@ class Kinematics
     
     // 다리 FK -> (biarticular 기준) 현재 다리의 각도를 이용해 rw각도로 변환
     void Cal_RW(double thm, double thb, int Leg_num); // thm = th1, thb = th1+th2
-    void Cal_RW_inertia(double thm, double thb); // thm = th1, thb = th1+th2
-    
-    //rw jacobian
-    Matrix2d RW_Jacobian(){ return Jacobian; };
+    Matrix2d Cal_RW_inertia(double thm, double thb); // thm = th1, thb = th1+th2
 
     // private 변수 출력 
     Vector2d get_posRW() { return posRW; };
     Vector2d get_posRW_error(int idx);
-    Matrix2d get_RW_Jacobian() { return Jacobian; };
-    Matrix2d get_RW_Jacobian_Trans() { return JacobianTrans; };
-    
+    Matrix2d get_RW_Jacobian() { return RWJacobian; };
+    Matrix2d get_RW_Jacobian_Trans() { return RWJacobianTrans; };
+    // Matrix2d get_matrix_jnt2bi(){return };
+    // Matrix2d get_matrix_bi2jnt(){return };
 
     
     

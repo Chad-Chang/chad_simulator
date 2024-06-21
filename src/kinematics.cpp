@@ -1,7 +1,10 @@
 #include "kinematics.h"
 
 Kinematics::Kinematics() {
-
+  jnt2bi << 1,0,
+            1,1;
+  bi2jnt << 1,0,
+            -1,1;
 }
 
 // 다리별로 R과 theta의 값을 계산 => biarticular joint vel -> rotating vel
@@ -11,25 +14,24 @@ void Kinematics::Cal_RW(double thm, double thb, int Leg_num)
   double th2 = thb - thm;
 
   // biarticular to rotating position space
-  Jacobian(0, 0) = sin(th2 / 2);
-  Jacobian(0, 1) = -sin(th2 / 2);
-  Jacobian(1, 0) = cos(th2 / 2);
-  Jacobian(1, 1) = cos(th2 / 2);
+  RWJacobian(0, 0) = sin(th2 / 2);
+  RWJacobian(0, 1) = -sin(th2 / 2);
+  RWJacobian(1, 0) = cos(th2 / 2);
+  RWJacobian(1, 1) = cos(th2 / 2);
 
 
-  Jacobian = L * Jacobian;
-  JacobianTrans = Jacobian.transpose();
-  Jacobian_inv = Jacobian.inverse();
-  JacobianTrans_inv = JacobianTrans.inverse();
+  RWJacobian = L * RWJacobian;
+  RWJacobianTrans = RWJacobian.transpose();
+  RWJacobian_inv = RWJacobian.inverse();
+  RWJacobianTrans_inv = RWJacobianTrans.inverse();
   posRW[0] = 2 * L * cos((thb - thm) / 2);
   posRW[1] = 0.5 * (thm + thb);
   
   r_posRW[Leg_num] = posRW[0];
   th_posRW[Leg_num] = posRW[1];
-
 }
 
-void Kinematics::Cal_RW_inertia(double thm, double thb)
+Matrix2d Kinematics::Cal_RW_inertia(double thm, double thb)
 {
   // Jacobian
   double th2 = thb - thm;
@@ -37,9 +39,22 @@ void Kinematics::Cal_RW_inertia(double thm, double thb)
   A(0,1) = m_shank*L*d_shank*cos(th2);
   A(1,1) = m_shank*L*d_shank*cos(th2);
   A(1,1) = Izz_shank;
-  Lambda = JacobianTrans_inv*A*Jacobian_inv;
+  // Lambda_R = RWJacobianTrans_inv*A*RWJacobian_inv; // roating workspa
+  // 오세훈 교수님 논문 참조
+  double frac_RW_J1 = A(0,0) - 2* A(0,1) +A(1,1);
+  double frac_RW_J2 = A(0,0) + 2* A(0,1) +A(1,1);
+  double frac_RW_Jm = A(0,0) +A(1,1);  
+  // 이 람다 : RW 좌표계에서의 xy를 기준으로함.
+  Lambda_R(0,0) = frac_RW_J1/pow(sin(th2/2),2);
+  Lambda_R(0,1) = frac_RW_Jm/sin(th2/2);
+  Lambda_R(1,0) = Lambda_R(0,1);
+  Lambda_R(1,1) = frac_RW_J2/pow(cos(th2/2),2);
+  Lambda_R = Lambda_R*1/(2*pow(L,2));
+
+  Matrix2d Lambda_R_nomi;
+  Lambda_R_nomi << Lambda_R(0,0)/2, 0,0,Lambda_R(1,1)/2;
   
-  
+  return Lambda_R_nomi;
 }
 
 // 이전 값들 업데이트

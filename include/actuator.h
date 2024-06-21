@@ -16,6 +16,7 @@ using namespace std;
 class Actuator
 {
     private:
+        double PI = 3.141592;
         double target_torque{0};
         double target_speed{0};
         double target_position{0};
@@ -27,11 +28,12 @@ class Actuator
         // ////////////// DATA //////////////////////
         double Motor_pos;
         double Motor_vel;
+        double Motor_acc;
+
         double Motor_torque;
 
         double Motor_position;
         double Motor_velocity;
-
         // ///////////// Which motor ///////////////
         int Motor_Num;
 
@@ -51,10 +53,11 @@ class Actuator
         void DATA_Receive(mjData* d);
         // torque input send
         void DATA_Send(mjData* d,double torque);
-        
+
         // private 변수 return
         double getMotor_pos() { return Motor_pos; }; // return first address of Motor_pos
         double getMotor_vel() { return Motor_vel; };
+        double getMotor_acc() { return Motor_acc; };
         double getMotor_torque() { return Motor_torque; };
 };
 
