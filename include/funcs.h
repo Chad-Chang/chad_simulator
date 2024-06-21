@@ -48,7 +48,7 @@ double lastx = 0;
 double lasty = 0;
 double Ts = 0.001;
 double cutoff = 150;
-Vector2d FL_distub; Vector2d FR_distub; Vector2d RL_distub;  Vector2d RR_distub;
+Vector2d QFL_d_hat;  Vector2d QFR_d_hat;  Vector2d QRL_d_hat;   Vector2d QRR_d_hat;
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -140,8 +140,8 @@ void save_data(const mjModel* m, mjData* d)
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0)); // hip에서만 측정
-    printf("%f, %f, %f, %f, %f,\n", disturbance,FL_distub(0),FR_distub(0),RL_distub(0),RR_distub(0));
+    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
+    printf("%f, %f, %f, %f, %f,\n", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
     //Don't remove the newline
     fprintf(fid, "\n");
 }
