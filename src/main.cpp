@@ -18,8 +18,11 @@ Matrix2d JTrans_FL;Matrix2d JTrans_FR;Matrix2d JTrans_RL;Matrix2d JTrans_RR;
 Vector2d FL_output;Vector2d FR_output;Vector2d RL_output;Vector2d RR_output;
 // motor control input
 Vector2d FL_control_input;Vector2d FR_control_input;Vector2d RL_control_input;Vector2d RR_control_input;
-Vector2d FL_control_input_DOB;Vector2d FR_control_input_DOB;Vector2d RL_control_input_DOB;Vector2d RR_control_input_DOB;
-Vector2d FL_control_input_DOB_old;Vector2d FR_control_input_DOB_old;Vector2d RL_control_input_DOB_old;Vector2d RR_control_input_DOB_old;
+Vector2d FL_input_DOB;Vector2d FR_input_DOB;Vector2d RL_input_DOB;Vector2d RR_input_DOB;
+Vector2d FL_input_DOB_old;Vector2d FR_input_DOB_old;Vector2d RL_input_DOB_old;Vector2d RR_input_DOB_old;
+
+Vector2d QFL_input_DOB;Vector2d QFR_input_DOB;Vector2d QRL_input_DOB;Vector2d QRR_input_DOB;
+Vector2d QFL_input_DOB_old;Vector2d QFR_input_DOB_old;Vector2d QRL_input_DOB_old;Vector2d QRR_input_DOB_old;
 
 Actuator ACT_RLHAA(5, 0);Actuator ACT_RLHIP(4, 0.546812);Actuator ACT_RLKNEE(3, 2.59478);
 Actuator ACT_RRHAA(0, 0);Actuator ACT_RRHIP(1, 0.546812);Actuator ACT_RRKNEE(2, 2.59478);
@@ -84,9 +87,12 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         th_acc_RL_old(0) = th_acc_RL(0); th_acc_RL_old(1) = th_acc_RL(1);
         th_acc_RR_old(0) = th_acc_RR(0); th_acc_RR_old(1) = th_acc_RR(1);
 
-        FL_control_input_DOB = FL_control_input_DOB_old; FR_control_input_DOB = FR_control_input_DOB_old;
-        RL_control_input_DOB = RL_control_input_DOB_old; RR_control_input_DOB = RR_control_input_DOB_old;
+        FL_input_DOB_old = FL_input_DOB; FR_input_DOB_old = FR_input_DOB;
+        RL_input_DOB_old = RL_input_DOB; RR_input_DOB_old = RR_input_DOB;
         
+        QFL_input_DOB_old = QFL_input_DOB; QFR_input_DOB_old = QFR_input_DOB; 
+        QRL_input_DOB_old = QFL_input_DOB; QRR_input_DOB_old = QRR_input_DOB;
+
         FL_distub_old = FL_distub; FR_distub_old = FR_distub; RL_distub_old = RL_distub; RR_distub_old = RR_distub;
 
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
@@ -109,8 +115,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         th_vel_FR(0) = ACT_FRHIP.getMotor_vel(); th_vel_FR(1) = ACT_FRKNEE.getMotor_vel();
         th_vel_RL(0) = ACT_RLHIP.getMotor_vel(); th_vel_RL(1) = ACT_RLKNEE.getMotor_vel();
         th_vel_RR(0) = ACT_RRHIP.getMotor_vel(); th_vel_RR(1) = ACT_RRKNEE.getMotor_vel();
-        // cout<< th_vel_RR(0) << endl;
-        // cout<< th_vel_RR(0) << endl;
+
+        // cout<< th_vel_FL(0)  << " "<<th_vel_FR(0) << " "<<th_vel_RL(0) <<  " "<<th_vel_RR(0) << endl;
+        // cout<< th_vel_FL(1)  << " "<<th_vel_FR(1) << " "<<th_vel_RL(1) <<  " "<<th_vel_RR(1) << endl;
+
         /****************** Kinematics ******************/
         ////////////////////// 바이아티큘러 구조일때 - real robot////////////////////////
         // K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos(),0); 
@@ -128,7 +136,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         inertia_jBi2BiTq_RR = K_RR.get_RW_Jacobian_Trans()*
                             K_RR.Cal_RW_inertia(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos())*K_RR.get_RW_Jacobian();
 
-
         ////////////////////// 시리얼 구조일때  - mujoco ////////////////////////
         K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),0); 
         K_FR.Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos(),1);
@@ -143,7 +150,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         K_FL.pos_trajectory(traj_t, 0); K_FR.pos_trajectory(traj_t, 1); K_RL.pos_trajectory(traj_t, 2); K_RR.pos_trajectory(traj_t, 3); 
 
-        
         /****************** State ******************/ // pos RW
         
         posRW_FL = K_FL.get_posRW(); // function의 마지막 input이 0이면 현재 값, 1이면 이전 값
@@ -185,15 +191,13 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         FL_control_input = gear_ratio * JTrans_FL * FL_output; FR_control_input = gear_ratio * JTrans_FR * FR_output;
         RL_control_input = gear_ratio * JTrans_RL * RL_output; RR_control_input = gear_ratio * JTrans_RR * RR_output;
         
-        FL_control_input << 0,0; FR_control_input << 0,0;
-        RL_control_input << 0,0; RR_control_input << 0,0;
-        
-        if(!DOB_on){QFL_distub <<0,0; QFR_distub <<0,0;QRL_distub<<0,0;QRR_distub <<0,0;}
+
+        if(!DOB_on){FL_control_input <<0,0; FR_control_input <<0,0;RL_control_input<<0,0;RR_control_input <<0,0;}
 
 
         // 여기 disturbance 
-        FL_control_input_DOB = - QFL_distub + FL_control_input; FR_control_input_DOB = - QFR_distub + FR_control_input;
-        RL_control_input_DOB = - QRL_distub + RL_control_input; RR_control_input_DOB = - QRR_distub + RR_control_input;
+        FL_input_DOB = - FL_distub + FL_control_input; FR_input_DOB = - FR_distub + FR_control_input;
+        RL_input_DOB = - RL_distub + RL_control_input; RR_input_DOB = - RR_distub + RR_control_input;
 
         disturbance = 1*sin(0.001*t);
         // joint space acceleration
@@ -214,19 +218,31 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         FR_distub = inertia_jBi2BiTq_FR*jnt2bi*th_acc_FR;
         RL_distub = inertia_jBi2BiTq_RL*jnt2bi*th_acc_RL;
         RR_distub = inertia_jBi2BiTq_RR*jnt2bi*th_acc_RR;
-        
 
-        QFL_distub(0) = lowpassfilter(FL_distub(0),FL_distub_old(0),QFL_distub(0),20); 
-        QFL_distub(1) = lowpassfilter(FL_distub(1),FL_distub_old(1),QFL_distub(1),20);
+        QFL_input_DOB(0) = lowpassfilter(FL_input_DOB(0),FL_input_DOB_old(0),QFL_input_DOB_old(0),20); 
+        QFL_input_DOB(1) = lowpassfilter(FL_input_DOB(1),FL_input_DOB_old(1),QFL_input_DOB_old(1),20);
         
-        QFR_distub(0) = lowpassfilter(FR_distub(0),FR_distub_old(0),QFR_distub(0),20); 
-        QFR_distub(1) = lowpassfilter(FR_distub(1),FR_distub_old(1),QFR_distub(1),20);
+        QFR_input_DOB(0) = lowpassfilter(FR_input_DOB(0),FR_input_DOB_old(0),QFR_input_DOB_old(0),20); 
+        QFR_input_DOB(1) = lowpassfilter(FR_input_DOB(1),FR_input_DOB_old(1),QFR_input_DOB_old(1),20);
         
-        QRL_distub(0) = lowpassfilter(RL_distub(0),RL_distub_old(0),QRL_distub(0),20); 
-        QRL_distub(1) = lowpassfilter(RL_distub(1),RL_distub_old(1),QRL_distub(1),20);
+        QRL_input_DOB(0) = lowpassfilter(RL_input_DOB(0),RL_input_DOB_old(0),QRL_input_DOB_old(0),20); 
+        QRL_input_DOB(1) = lowpassfilter(RL_input_DOB(1),RL_input_DOB_old(1),QRL_input_DOB_old(1),20);
 
-        QRR_distub(0) = lowpassfilter(RR_distub(0),RR_distub_old(0),QRR_distub(0),20); 
-        QRR_distub(1) = lowpassfilter(RR_distub(1),RR_distub_old(1),QRR_distub(1),20);
+        QRR_input_DOB(0) = lowpassfilter(RR_input_DOB(0),RR_input_DOB_old(0),QRR_input_DOB_old(0),20); 
+        QRR_input_DOB(1) = lowpassfilter(RR_input_DOB(1),RR_input_DOB_old(1),QRR_input_DOB_old(1),20);
+
+        
+        // QFL_distub(0) = lowpassfilter(FL_distub(0),FL_distub_old(0),QFL_distub(0),20); 
+        // QFL_distub(1) = lowpassfilter(FL_distub(1),FL_distub_old(1),QFL_distub(1),20);
+        
+        // QFR_distub(0) = lowpassfilter(FR_distub(0),FR_distub_old(0),QFR_distub(0),20); 
+        // QFR_distub(1) = lowpassfilter(FR_distub(1),FR_distub_old(1),QFR_distub(1),20);
+        
+        // QRL_distub(0) = lowpassfilter(RL_distub(0),RL_distub_old(0),QRL_distub(0),20); 
+        // QRL_distub(1) = lowpassfilter(RL_distub(1),RL_distub_old(1),QRL_distub(1),20);
+
+        // QRR_distub(0) = lowpassfilter(RR_distub(0),RR_distub_old(0),QRR_distub(0),20); 
+        // QRR_distub(1) = lowpassfilter(RR_distub(1),RR_distub_old(1),QRR_distub(1),20);
 
         
         /*******************HAA position control input*******************/
@@ -242,38 +258,38 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         
         d->qpos[2] = 0.5;
 
-        // // 입력 토크
-        // ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
-        // ACT_FLHIP.DATA_Send(d,FL_control_input[0]+FL_control_input[1]);
-        // ACT_FLKNEE.DATA_Send(d,FL_control_input[1]);
-        // // d->ctrl[3] = 1;
-        // ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
-        // ACT_FRHIP.DATA_Send(d,FR_control_input[0]+FR_control_input[1]);
-        // ACT_FRKNEE.DATA_Send(d,FR_control_input[1]);
-        // // d->ctrl[6] = 1;
-        // ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
-        // ACT_RLHIP.DATA_Send(d,RL_control_input[0]+RL_control_input[1]);
-        // ACT_RLKNEE.DATA_Send(d,RL_control_input[1]);
-        // // d->ctrl[9] = 1;
-        // ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
-        // ACT_RRHIP.DATA_Send(d,RR_control_input[0]+RR_control_input[1]);
-        // ACT_RRKNEE.DATA_Send(d,RR_control_input[1]);
-
+        // 입력 토크
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
-        ACT_FLHIP.DATA_Send(d,FL_control_input_DOB[0]+FL_control_input_DOB[1]+disturbance);
-        ACT_FLKNEE.DATA_Send(d,FL_control_input_DOB[1]);
+        ACT_FLHIP.DATA_Send(d,QFL_input_DOB[0]+QFL_input_DOB[1]+disturbance);
+        ACT_FLKNEE.DATA_Send(d,QFL_input_DOB[1]);
         // d->ctrl[3] = 1;
         ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
-        ACT_FRHIP.DATA_Send(d,FR_control_input_DOB[0]+FR_control_input_DOB[1]+disturbance);
-        ACT_FRKNEE.DATA_Send(d,FR_control_input_DOB[1]);
+        ACT_FRHIP.DATA_Send(d,QFR_input_DOB[0]+QFR_input_DOB[1]+disturbance);
+        ACT_FRKNEE.DATA_Send(d,QFR_input_DOB[1]);
         // d->ctrl[6] = 1;
         ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
-        ACT_RLHIP.DATA_Send(d,RL_control_input_DOB[0]+RL_control_input_DOB[1]+disturbance);
-        ACT_RLKNEE.DATA_Send(d,RL_control_input_DOB[1]);
+        ACT_RLHIP.DATA_Send(d,QRL_input_DOB[0]+QRL_input_DOB[1]+disturbance);
+        ACT_RLKNEE.DATA_Send(d,QRL_input_DOB[1]);
         // d->ctrl[9] = 1;
         ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
-        ACT_RRHIP.DATA_Send(d,RR_control_input_DOB[0]+RR_control_input_DOB[1]+disturbance);
-        ACT_RRKNEE.DATA_Send(d,RR_control_input_DOB[1]);
+        ACT_RRHIP.DATA_Send(d,QRR_input_DOB[0]+QRR_input_DOB[1]+disturbance);
+        ACT_RRKNEE.DATA_Send(d,QRR_input_DOB[1]);
+
+        // ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
+        // ACT_FLHIP.DATA_Send(d,FL_control_input_DOB[0]+FL_control_input_DOB[1]+disturbance);
+        // ACT_FLKNEE.DATA_Send(d,FL_control_input_DOB[1]);
+        // // d->ctrl[3] = 1;
+        // ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
+        // ACT_FRHIP.DATA_Send(d,FR_control_input_DOB[0]+FR_control_input_DOB[1]+disturbance);
+        // ACT_FRKNEE.DATA_Send(d,FR_control_input_DOB[1]);
+        // // d->ctrl[6] = 1;
+        // ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
+        // ACT_RLHIP.DATA_Send(d,RL_control_input_DOB[0]+RL_control_input_DOB[1]+disturbance);
+        // ACT_RLKNEE.DATA_Send(d,RL_control_input_DOB[1]);
+        // // d->ctrl[9] = 1;
+        // ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
+        // ACT_RRHIP.DATA_Send(d,RR_control_input_DOB[0]+RR_control_input_DOB[1]+disturbance);
+        // ACT_RRKNEE.DATA_Send(d,RR_control_input_DOB[1]);
 
         
     }
@@ -302,7 +318,7 @@ int main(int argc, const char** argv)
     // load and compile model
     char error[1000] = "Could not load binary model";
 
-    // check command-line arguments
+    // check command-line argumentsgear_ratio
     if (argc < 2)
         m = mj_loadXML(filename, 0, error, 1000);
 
