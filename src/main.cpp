@@ -9,10 +9,10 @@ RW_Controller C_FL;RW_Controller C_FR;RW_Controller C_RL;RW_Controller C_RR;
 // J_Controller JC_FLHAA;J_Controller JC_FRHAA;J_Controller JC_RLHAA;J_Controller JC_RRHAA;
 
 // Jacobian
-Matrix2d J_FL;Matrix2d J_FR;Matrix2d J_RL;Matrix2d J_RR;
+Matrix2d J_FL; Matrix2d J_FR; Matrix2d J_RL; Matrix2d J_RR;
 
 
-Matrix2d JTrans_FL;Matrix2d JTrans_FR;Matrix2d JTrans_RL;Matrix2d JTrans_RR;
+Matrix2d JTrans_FL;Matrix2d JTrans_FR; Matrix2d JTrans_RL; Matrix2d JTrans_RR;
 
 // Controller output : RW PID INPUT//
 Vector2d FL_output;Vector2d FR_output;Vector2d RL_output;Vector2d RR_output;
@@ -55,8 +55,6 @@ Vector2d FL_ctl_input_DOB;Vector2d FR_ctl_input_DOB;Vector2d RL_ctl_input_DOB;Ve
 
 Matrix2d inertia_jBi2BiTq_FL; Matrix2d inertia_jBi2BiTq_FR; Matrix2d inertia_jBi2BiTq_RL; Matrix2d inertia_jBi2BiTq_RR;
 
-Matrix2d jnt2bi; Matrix2d bi2jnt;
-
 Vector2d FL_torq_hat; Vector2d FR_torq_hat; Vector2d RL_torq_hat; Vector2d RR_torq_hat;
 
 Vector2d FL_d_hat; Vector2d FR_d_hat; Vector2d RL_d_hat;  Vector2d RR_d_hat;
@@ -64,12 +62,14 @@ Vector2d FL_d_hat_old; Vector2d FR_d_hat_old; Vector2d RL_d_hat_old; Vector2d RR
 extern Vector2d QFL_d_hat; extern Vector2d QFR_d_hat; extern Vector2d QRL_d_hat;  extern Vector2d QRR_d_hat;
 Vector2d QFL_d_hat_old; Vector2d QFR_d_hat_old; Vector2d QRL_d_hat_old; Vector2d QRR_d_hat_old;
 
-
+Matrix2d jnt2bi; Matrix2d bi2jnt; Matrix2d tq_jnt2bi; Matrix2d tq_bi2jnt;
+Vector2d FL_bi_pos; Vector2d FR_bi_pos; Vector2d RL_bi_pos; Vector2d RR_bi_pos;
 double HAA_control_input[4];
 double gear_ratio = 100;
 int t = 0;
 int traj_t = 0;
-
+int lpf_cutoff = 120;
+int dif_cutoff= 400;
 void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 {   
     
@@ -91,7 +91,8 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
         C_FL.j_set_gain(100,0,1);C_FR.j_set_gain(100,0,1);C_RL.j_set_gain(100,0,1);C_RR.j_set_gain(100,0,1); // joint controller
-        C_FL.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
+        C_FL.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain); C_FR.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
+        C_RL.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain); C_RR.rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
 
         traj_t ++;
         t++;
@@ -111,17 +112,17 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         th_vel_RR(0) = ACT_RRHIP.getMotor_vel(); th_vel_RR(1) = ACT_RRKNEE.getMotor_vel();
 
         // 가속도 구하기 
-        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),200);
-        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),200);
+        th_acc_FL(0) = tustin_derivative(th_vel_FL(0),th_vel_FL_old(0),th_acc_FL_old(0),dif_cutoff);
+        th_acc_FL(1) = tustin_derivative(th_vel_FL(1),th_vel_FL_old(1),th_acc_FL_old(1),dif_cutoff);
 
-        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),200);
-        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),200);
+        th_acc_FR(0) = tustin_derivative(th_vel_FR(0),th_vel_FR_old(0),th_acc_FR_old(0),dif_cutoff);
+        th_acc_FR(1) = tustin_derivative(th_vel_FR(1),th_vel_FR_old(1),th_acc_FR_old(1),dif_cutoff);
 
-        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),200);
-        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),200);
+        th_acc_RL(0) = tustin_derivative(th_vel_RL(0),th_vel_RL_old(0),th_acc_RL_old(0),dif_cutoff);
+        th_acc_RL(1) = tustin_derivative(th_vel_RL(1),th_vel_RL_old(1),th_acc_RL_old(1),dif_cutoff);
 
-        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),200);
-        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),200);
+        th_acc_RR(0) = tustin_derivative(th_vel_RR(0),th_vel_RR_old(0),th_acc_RR_old(0),dif_cutoff);
+        th_acc_RR(1) = tustin_derivative(th_vel_RR(1),th_vel_RR_old(1),th_acc_RR_old(1),dif_cutoff);
         /****************** Kinematics ******************/
         ////////////////////// 바이아티큘러 구조일때 - real robot////////////////////////
         // K_FL.Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos(),0); 
@@ -192,9 +193,7 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         RL_control_input =  gear_ratio * JTrans_RL * RL_output; RR_control_input = gear_ratio * JTrans_RR * RR_output;
         // FL_control_input << 0,0; FR_control_input << 0,0; RL_control_input << 0,0; RR_control_input << 0,0;
         // 여기 disturbance 
-        FL_ctl_input_DOB = QFL_d_hat + FL_control_input; FR_ctl_input_DOB = QFR_d_hat + FR_control_input;
-        RL_ctl_input_DOB = QRL_d_hat + RL_control_input; RR_ctl_input_DOB = QRR_d_hat + RR_control_input;
-
+        
         disturbance = 1*sin(0.0001*t);
         // joint space acceleration 계산
 
@@ -206,60 +205,51 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         RL_d_hat = RL_torq_hat - RL_control_input; RR_d_hat = RR_torq_hat - RR_control_input; 
 
         //  delay disturbance
-        QFL_d_hat(0) = lowpassfilter(FL_d_hat(0) , FL_d_hat_old(0), QFL_d_hat_old(0),120); QFL_d_hat(1) = lowpassfilter(FL_d_hat(1) , FL_d_hat_old(1), QFL_d_hat_old(1),120);
-        QFR_d_hat(0) = lowpassfilter(FR_d_hat(0) , FR_d_hat_old(0), QFR_d_hat_old(0),120); QFR_d_hat(1) = lowpassfilter(FR_d_hat(1) , FR_d_hat_old(1), QFR_d_hat_old(1),120);
-        QRL_d_hat(0) = lowpassfilter(RL_d_hat(0) , RL_d_hat_old(0), QRL_d_hat_old(0),120); QRL_d_hat(1) = lowpassfilter(RL_d_hat(1) , RL_d_hat_old(1), QRL_d_hat_old(1),120);
-        QRR_d_hat(0) = lowpassfilter(RR_d_hat(0) , RR_d_hat_old(0), QRR_d_hat_old(0),120); QRR_d_hat(1) = lowpassfilter(RR_d_hat(1) , RR_d_hat_old(1), QRR_d_hat_old(1),120);
-    
+        QFL_d_hat(0) = lowpassfilter(FL_d_hat(0) , FL_d_hat_old(0), QFL_d_hat_old(0),lpf_cutoff); QFL_d_hat(1) = lowpassfilter(FL_d_hat(1) , FL_d_hat_old(1), QFL_d_hat_old(1),lpf_cutoff);
+        QFR_d_hat(0) = lowpassfilter(FR_d_hat(0) , FR_d_hat_old(0), QFR_d_hat_old(0),lpf_cutoff); QFR_d_hat(1) = lowpassfilter(FR_d_hat(1) , FR_d_hat_old(1), QFR_d_hat_old(1),lpf_cutoff);
+        QRL_d_hat(0) = lowpassfilter(RL_d_hat(0) , RL_d_hat_old(0), QRL_d_hat_old(0),lpf_cutoff); QRL_d_hat(1) = lowpassfilter(RL_d_hat(1) , RL_d_hat_old(1), QRL_d_hat_old(1),lpf_cutoff);
+        QRR_d_hat(0) = lowpassfilter(RR_d_hat(0) , RR_d_hat_old(0), QRR_d_hat_old(0),lpf_cutoff); QRR_d_hat(1) = lowpassfilter(RR_d_hat(1) , RR_d_hat_old(1), QRR_d_hat_old(1),lpf_cutoff);
         
-        /*******************HAA position control input*******************/
+        FL_ctl_input_DOB = - QFL_d_hat + FL_control_input; FR_ctl_input_DOB = - QFR_d_hat + FR_control_input;
+        RL_ctl_input_DOB = - QRL_d_hat + RL_control_input; RR_ctl_input_DOB = - QRR_d_hat + RR_control_input;
 
-        // HAA_control_input[0] = C_FL.j_posPID(PI/6,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[1] = C_FR.j_posPID(PI/2,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[2] = C_RL.j_posPID(PI/3,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        // HAA_control_input[3] = C_RR.j_posPID(PI/10,ACT_RRHAA.getMotor_pos(),T,cutoff);
+        /*******************HAA position control input*******************/
         HAA_control_input[0] = C_FL.j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[1] = C_FR.j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[2] = C_RL.j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_control_input[3] = C_RR.j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
         
-        // d-> qpos[2] = 0.5;
+        // disturbance
+        disturbance = 0.2*sin(0.01*t); // RW disturbance 
+        RW_dist(0) = disturbance; 
+        bi_dist = K_FL.get_RW_Jacobian_Trans() * RW_dist; // biarticular disturbance 
+        jnt_dist = tq_bi2jnt*bi_dist; // joint disturbance
+        
+        //torque joint to biarticular mapping
+        FL_ctl_input_DOB = tq_bi2jnt * FL_ctl_input_DOB; FR_ctl_input_DOB = tq_bi2jnt * FR_ctl_input_DOB;
+        RL_ctl_input_DOB = tq_bi2jnt * RL_ctl_input_DOB; RR_ctl_input_DOB = tq_bi2jnt * RR_ctl_input_DOB;
+
+        d-> qpos[2] = 0.5;
         // 입력 토크
+
         ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
-        ACT_FLHIP.DATA_Send(d,FL_ctl_input_DOB[0]+ FL_ctl_input_DOB[1]+disturbance);
-        ACT_FLKNEE.DATA_Send(d,FL_ctl_input_DOB[1]);
+        ACT_FLHIP.DATA_Send(d,FL_ctl_input_DOB[0] + jnt_dist[0]);
+        ACT_FLKNEE.DATA_Send(d,FL_ctl_input_DOB[1] + jnt_dist[1]);
         // d->ctrl[3] = 1;
         ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
-        ACT_FRHIP.DATA_Send(d,FR_ctl_input_DOB[0]+FR_ctl_input_DOB[1]+disturbance);
+        ACT_FRHIP.DATA_Send(d,FR_ctl_input_DOB[0]);
         ACT_FRKNEE.DATA_Send(d,FR_ctl_input_DOB[1]);
         // d->ctrl[6] = 1;
         ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
-        ACT_RLHIP.DATA_Send(d,RL_ctl_input_DOB[0]+RL_ctl_input_DOB[1]+disturbance);
+        ACT_RLHIP.DATA_Send(d,RL_ctl_input_DOB[0]);
         ACT_RLKNEE.DATA_Send(d,RL_ctl_input_DOB[1]);
         // d->ctrl[9] = 1;
         ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
-        ACT_RRHIP.DATA_Send(d,RR_ctl_input_DOB[0]+RR_ctl_input_DOB[1]+disturbance);
-        ACT_RRKNEE.DATA_Send(d,RR_ctl_input_DOB[1]);
-
-        // ACT_FLHAA.DATA_Send(d,HAA_control_input[0]);
-        // ACT_FLHIP.DATA_Send(d,FL_control_input_DOB[0]+FL_control_input_DOB[1]+disturbance);
-        // ACT_FLKNEE.DATA_Send(d,FL_control_input_DOB[1]);
-        // // d->ctrl[3] = 1;
-        // ACT_FRHAA.DATA_Send(d,HAA_control_input[1]);
-        // ACT_FRHIP.DATA_Send(d,FR_control_input_DOB[0]+FR_control_input_DOB[1]+disturbance);
-        // ACT_FRKNEE.DATA_Send(d,FR_control_input_DOB[1]);
-        // // d->ctrl[6] = 1;
-        // ACT_RLHAA.DATA_Send(d,HAA_control_input[2]);
-        // ACT_RLHIP.DATA_Send(d,RL_control_input_DOB[0]+RL_control_input_DOB[1]+disturbance);
-        // ACT_RLKNEE.DATA_Send(d,RL_control_input_DOB[1]);
-        // // d->ctrl[9] = 1;
-        // ACT_RRHAA.DATA_Send(d,HAA_control_input[3]);
-        // ACT_RRHIP.DATA_Send(d,RR_control_input_DOB[0]+RR_control_input_DOB[1]+disturbance);
-        // ACT_RRKNEE.DATA_Send(d,RR_control_input_DOB[1]);
-
-        
+        ACT_RRHIP.DATA_Send(d,RR_ctl_input_DOB[0]);
+        ACT_RRKNEE.DATA_Send(d,RR_ctl_input_DOB[1]); 
+              
     }
-
+    
     if (loop_index % data_frequency == 0) {     // loop_index를 data_frequency로 나눈 나머지가 0이면 데이터를 저장.
         save_data(m, d);
         
@@ -276,6 +266,8 @@ int main(int argc, const char** argv)
         1,1;
     bi2jnt << 1,0,
         -1,1;
+    tq_jnt2bi << 1, -1, 0, 1;
+    tq_bi2jnt << 1, 1, 0, 1;
 
     // activate software
     mj_activate("mjkey.txt");

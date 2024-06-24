@@ -28,4 +28,9 @@ Arr = table2array(T);
 figure(1);
 plot(Arr(5000:m,1),Arr(5000:m,2), 'r-' ,Arr(5000:m,1), Arr(5000:m,4), 'b-');
 ylabel(cell2mat(VariableNames(2)))
-legend('ref','FL_hip')
+legend('dist hip','d hat hip')
+
+figure(2);
+plot(Arr(5000:m,1),Arr(5000:m,3), 'r-' ,Arr(5000:m,1), Arr(5000:m,5), 'b-');
+ylabel(cell2mat(VariableNames(2)))
+legend('dist shank','d hat shank')

@@ -22,7 +22,10 @@ extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
 double disturbance;
-
+Vector2d RW_dist;
+Vector2d bi_dist; 
+Vector2d jnt_dist; 
+Vector2d QFL_d_hat;  Vector2d QFR_d_hat;  Vector2d QRL_d_hat;   Vector2d QRR_d_hat;
 // MuJoCo data structures
 mjModel* m = NULL;                  // MuJoCo model
 mjData* d = NULL;                   // MuJoCo data
@@ -48,7 +51,7 @@ double lastx = 0;
 double lasty = 0;
 double Ts = 0.001;
 double cutoff = 150;
-Vector2d QFL_d_hat;  Vector2d QFR_d_hat;  Vector2d QRL_d_hat;   Vector2d QRR_d_hat;
+
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -140,8 +143,8 @@ void save_data(const mjModel* m, mjData* d)
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
-    printf("%f, %f, %f, %f, %f,\n", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
+    fprintf(fid, "%f, %f, %f, %f", bi_dist(0),bi_dist(1),QFL_d_hat(0),QFL_d_hat(1)); // hip에서만 측정
+    printf("%f, %f, %f, %f \n", bi_dist(0),bi_dist(1),QFL_d_hat(0),QFL_d_hat(1));
     //Don't remove the newline
     fprintf(fid, "\n");
 }
