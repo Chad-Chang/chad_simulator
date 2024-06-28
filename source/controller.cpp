@@ -220,4 +220,17 @@ void controller::FOBRW(StateModel_* state_model, double cut_off)
 } // Rotating WorkspaceForce Observer
 
 
+vector<Eigen::VectorXd> controller::Data_Return(controller& ctrl)
+{
+    vector<Eigen::VectorXd> data;
+    data.push_back(ctrl.get_PID_output_pos());
+    data.push_back(ctrl.get_PID_output_vel());
+    data.push_back(ctrl.get_error_pos());
+    data.push_back(ctrl.get_deltaPos());
+
+    return data;
+}
+
+
+
 

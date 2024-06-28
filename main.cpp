@@ -4,6 +4,7 @@
 #include <stdbool.h> //for bool
 //#include<unistd.h> //for usl eep
 #include <math.h>
+#include <iostream>
 //#include <resource.h>
 
 #include <GLFW/glfw3.h>
@@ -47,13 +48,16 @@ trajectory tra_FR;
 trajectory tra_RL;
 trajectory tra_RR;
 
+/* Controllers */
+int flag_DOB = 1;           // flag for switching ON/OFF RWDOB
+int flag_admitt = 0;        // flag for switching ON/OFF admittance control
+/* Trajectory selection*/
+int cmd_motion_type = 0;   
+int mode_admitt = 1; // This is must be ON
+
 /***************** Main Controller *****************/
 void mycontroller(const mjModel* m, mjData* d)
 {
-   
-    /* Controllers */
-    int flag_DOB = 1;           // flag for switching ON/OFF RWDOB
-    int flag_admitt = 0;        // flag for switching ON/OFF admittance control
     double time_run = d->time;
     
     //Admittance Control
@@ -104,7 +108,11 @@ void mycontroller(const mjModel* m, mjData* d)
     
 
     if (loop_index % data_frequency == 0) {  
-        save_data(m, d, &state_Model_FL);
+        save_data_leg(m, d, &state_Model_FL, ctrl_FL.Data_Return(ctrl_FL),fid_FL);
+        save_data_leg(m, d, &state_Model_FR, ctrl_FR.Data_Return(ctrl_FR),fid_FR);
+        save_data_leg(m, d, &state_Model_RL, ctrl_RL.Data_Return(ctrl_RL),fid_RL);
+        save_data_leg(m, d, &state_Model_RR, ctrl_RR.Data_Return(ctrl_RR),fid_RR);
+        save_data_trunk(m, d, fid_Trunk);
     }
     loop_index += 1;
 }
@@ -166,8 +174,17 @@ int main(int argc, const char** argv)
     cam.lookat[1] = arr_view[4];
     cam.lookat[2] = arr_view[5];
     
-    fid = fopen(datapath, "w");
-    init_save_data();
+    fid_FL = fopen(datapath_FL, "w");
+    fid_FR = fopen(datapath_FR, "w");
+    fid_RL = fopen(datapath_RL, "w");
+    fid_RR = fopen(datapath_RR, "w");
+    fid_Trunk = fopen(datapath_Trunk, "w");
+
+    init_save_data_leg(fid_FL);
+    init_save_data_leg(fid_FR);
+    init_save_data_leg(fid_RL);
+    init_save_data_leg (fid_RR);
+    init_save_data_trunk(fid_Trunk);
 
     
     // Initialization
@@ -289,8 +306,12 @@ int main(int argc, const char** argv)
         }
 
         if (d->time >= simEndtime) {
-            fclose(fid);
-            break;
+            fclose(fid_FL);
+            fclose(fid_FR);
+            fclose(fid_RL);
+            fclose(fid_RR);
+            fclose(fid_Trunk);
+
         }
         //printf("%f \n", state_Model_FL.deltaPos[0]);
         // get framebuffer viewport

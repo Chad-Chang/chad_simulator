@@ -6,6 +6,9 @@
 #include "trajectory.h"
 #include <mujoco/mujoco.h> //Caution Crash
 #include "filter.h"
+#include <vector>
+
+using namespace std;
 
 //전역변수로 Leg_num 있어야함, PID제어기 몇개 인지도 있어야함
 
@@ -38,9 +41,9 @@ private:
     double ad_M;
     double ad_B;
     double ad_K;
-    double deltaPos[NDOF_LEG];
-    double deltaPos_old[NDOF_LEG];
-    double deltaPos_old2[NDOF_LEG];
+    Vector2d deltaPos;
+    Vector2d deltaPos_old;
+    Vector2d deltaPos_old2;
 
     //DOB
     Vector2d rhs_dob;
@@ -81,8 +84,15 @@ public:
     Vector2d DOBRW(StateModel_* state_model, double cut_off ,int flag);
     void FOBRW(StateModel_* state_model, double cut_off);
     void ctrl_update(); // 이걸 사용할지에 대해서 생각해보기
-    void ctrl_data_Logging();
-    void ctrl_data_init();
+    
+    // Data Logging
+    vector<Eigen::VectorXd> Data_Return(controller& ctrl); 
+    // Getter function(start variable 0)
+    Vector2d get_PID_output_pos(){return PID_output_pos;};
+    Vector2d get_PID_output_vel(){return PID_output_vel;};
+    Vector2d get_error_pos(){return error_pos;};
+    Vector2d get_deltaPos(){return deltaPos;};
+    
     
 
 };

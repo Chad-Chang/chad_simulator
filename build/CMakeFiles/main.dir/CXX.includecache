@@ -71,6 +71,8 @@ mujoco/mujoco.h
 -
 filter.h
 ../include/filter.h
+vector
+-
 
 ../include/dataLogging.h
 globVariable.h
@@ -114,6 +116,8 @@ string.h
 stdbool.h
 -
 math.h
+-
+iostream
 -
 GLFW/glfw3.h
 -
