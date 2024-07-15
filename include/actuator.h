@@ -24,16 +24,11 @@ class Actuator
         // Initial position //
         double Motor_initial_pos;
         double Motor_pos_offset;
-
         // ////////////// DATA //////////////////////
-        double Motor_pos;
-        double Motor_vel;
-        double Motor_acc;
-
+        double Motor_pos[2];
+        double Motor_vel[2];
+        double Motor_acc[2];
         double Motor_torque;
-
-        double Motor_position;
-        double Motor_velocity;
         // ///////////// Which motor ///////////////
         int Motor_Num;
 
@@ -53,11 +48,13 @@ class Actuator
         void DATA_Receive(mjData* d);
         // torque input send
         void DATA_Send(mjData* d,double torque);
+        void setDelayData();
+        void acc_cal(double cutoff);
 
         // private 변수 return
-        double getMotor_pos() { return Motor_pos; }; // return first address of Motor_pos
-        double getMotor_vel() { return Motor_vel; };
-        double getMotor_acc() { return Motor_acc; };
+        double getMotor_pos() { return Motor_pos[0]; }; // return first address of Motor_pos
+        double getMotor_vel() { return Motor_vel[0]; };
+        double getMotor_acc() { return Motor_acc[0]; };
         double getMotor_torque() { return Motor_torque; };
 };
 

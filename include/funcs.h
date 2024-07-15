@@ -140,8 +140,8 @@ void save_data(const mjModel* m, mjData* d)
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
-    printf("%f, %f, %f, %f, %f,\n", disturbance,QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
+    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
+    // printf("%f, %f, %f, %f, %f,\n", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
     //Don't remove the newline
     fprintf(fid, "\n");
 }

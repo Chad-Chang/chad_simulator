@@ -13,31 +13,67 @@ extern double a;
 class RW_Controller : public J_Controller
 {
   private:
-    double cutoff_freq = 150; 
+    double pos_cutoff_freq = 150; 
+    double vel_cutoff_freq = 150; 
     double PI = 3.141592;
     double T = 0.001;
-    
-    // PID //
+    // DOB
+    Vector2d rhs_dob;
+    Vector2d lhs_dob;
+    Matrix2d T_dob; // old값 setting 할려고 두개로 만듬
+    Matrix2d tauDist_hat; // old값 초기화 해줘야함
+
+    Vector2d rhs_fob;
+    Vector2d lhs_fob;
+    Vector2d T_fob; // old값 setting 할려고 두개로 만듬
+    Vector2d tauExt_hat[2]; // old값 초기화 해줘야함
+
+    double forceExt_hat[3]; // old값 초기화 해줘야함
+
+    // admittance
+    double deltaPos[3];
+
+    // pose PID //
     Vector4d RW_r_posPgain = {40,40,40,40}; // FL FR RL RR leg
     Vector4d RW_r_posIgain;
     Vector4d RW_r_posDgain;
-    Vector4d RW_r_posD_cutoff = {cutoff_freq,cutoff_freq,cutoff_freq,cutoff_freq};
+    Vector4d RW_r_posD_cutoff = {pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq};
 
     Vector4d RW_th_posPgain = {40,40,40,40}; // FL FR RL RR
     Vector4d RW_th_posIgain;
     Vector4d RW_th_posDgain;
-    Vector4d RW_th_posD_cutoff= {cutoff_freq,cutoff_freq,cutoff_freq,cutoff_freq};
+    Vector4d RW_th_posD_cutoff= {pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq};
 
     Vector2d RW_posPID_output;
+
+    // vel PID //
+    Vector4d RW_r_velPgain = {40,40,40,40}; // FL FR RL RR leg
+    Vector4d RW_r_velIgain;
+    Vector4d RW_r_velDgain;
+    Vector4d RW_r_velD_cutoff = {vel_cutoff_freq,vel_cutoff_freq,vel_cutoff_freq,vel_cutoff_freq};
+
+    Vector4d RW_th_velPgain = {40,40,40,40}; // FL FR RL RR
+    Vector4d RW_th_velIgain;
+    Vector4d RW_th_velDgain;
+    Vector4d RW_th_velD_cutoff= {vel_cutoff_freq,vel_cutoff_freq,vel_cutoff_freq,vel_cutoff_freq};
+
+    Vector2d RW_velPID_output;
     
     
   //   // Using in Function
     double RW_Pos_P_term[2][2]; // first column is about r, second column is about theta
     double RW_Pos_I_term[2][2];
     double RW_Pos_D_term[2][2];
-    double RW_kp;
-    double RW_ki;
-    double RW_kd;
+    double pos_kp;
+    double pos_ki;
+    double pos_kd;
+
+    double RW_vel_P_term[2][2]; // first column is about r, second column is about theta
+    double RW_vel_I_term[2][2];
+    double RW_vel_D_term[2][2];
+    double vel_kp;
+    double vel_ki;
+    double vel_kd;
 
 
   public:
@@ -47,9 +83,24 @@ class RW_Controller : public J_Controller
     void rw_setDelayData();
 
     // PID 컨트롤러 출력값 => 입력 변수 조금 바꾸고 싶음.
-    double rw_posPID(Vector2d posRW_err, Vector2d posRW_err_old, int r0th1, int Leg_num); // idx:  r(=0), th(=1)중 어떤 state의 PD control?
+    double rw_posPID(Vector2d posRW_err, Vector2d posRW_err_old, int idx, int Leg_num); // idx:  r(=0), th(=1)중 어떤 state의 PD control?
                                                                                            // Leg_num: FL-0 FR-1 RL-2 RR-3
+    double rw_velPID(Vector2d velRW_err, Vector2d velRW_err_old, int idx, int Leg_num); // idx:  r(=0), th(=1)중 어떤 state의 PD control?
+                                                                                          // Leg_num: FL-0 FR-1 RL-2 RR-3
+    
 
+    //DOB
+    Vector2d DOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off
+    void DOBinitial();
+
+    //FOB 
+    void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off                                                       
+    void FOBinitial();
+
+    //admittance
+    double admittance(double omega_n, double zeta, double k);
+
+    void init();
     // rw gain 값들 setting :: 각 변수마다 4x1 벡터로 입력 
     void rw_set_gain(Vector4d r_Pgain,Vector4d r_Dgain,Vector4d r_Igain,Vector4d th_Pgain,Vector4d th_Dgain,Vector4d th_Igain);
     
@@ -80,6 +131,33 @@ class RW_Controller : public J_Controller
         return RW_r_posD_cutoff[Leg_num];
       else
         return RW_th_posD_cutoff[Leg_num];
+    };
+
+    double rw_get_velPgain(int Leg_num, int r0th1) {
+      if (r0th1 == 0)
+        return RW_r_velPgain[Leg_num];
+      else
+        return RW_th_velPgain[Leg_num];
+    };
+
+    double rw_get_velIgain(int Leg_num, int r0th1) {
+      if (r0th1 == 0)
+        return RW_r_velIgain[Leg_num];
+      else
+        return RW_th_velIgain[Leg_num];
+    };
+
+    double rw_get_velDgain(int Leg_num, int r0th1) {
+      if (r0th1 == 0)
+        return RW_r_velDgain[Leg_num];
+      else
+        return RW_th_velDgain[Leg_num];
+    };
+    double rw_get_velD_cutoff(int Leg_num, int r0th1) {
+      if (r0th1 == 0)
+        return RW_r_velD_cutoff[Leg_num];
+      else
+        return RW_th_velD_cutoff[Leg_num];
     };
 
 

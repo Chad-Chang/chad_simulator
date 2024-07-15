@@ -3,9 +3,9 @@ clc
 close all
 
 % desktop
-% cd '/home/chad/Documents/mujoco/projects/chad_simulator/data'
+cd '/home/chad/Documents/mujoco/projects/chad_simulator/data'
 % labtop 
-cd '/home/chad_chang/mujoco/myProject/chad_simulator/data'
+% cd '/home/chad_chang/mujoco/myProject/chad_simulator/data'
 filename = '/ROBOT_DOB.csv';
 
 T = readtable(filename); %check T.Properties
