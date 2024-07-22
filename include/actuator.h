@@ -20,10 +20,7 @@ class Actuator
         double target_torque{0};
         double target_speed{0};
         double target_position{0};
-
-        // Initial position //
-        double Motor_initial_pos;
-        double Motor_pos_offset;
+        double cutoff_acc_ = 150;
         // ////////////// DATA //////////////////////
         double Motor_pos[2];
         double Motor_vel[2];

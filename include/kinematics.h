@@ -86,6 +86,7 @@ class Kinematics
 
     Matrix2d get_RW_Jacobian() { return RWJacobian; };
     Matrix2d get_RW_Jacobian_Trans() { return RWJacobianTrans; };
+    Matrix2d get_RW_Jacobian_Trans_inv() { return RWJacobianTrans_inv; };
     Matrix2d get_Lamda_nominal_FOB() { return Lamda_nominal_FOB; };
     Matrix2d get_Lamda_nominal_DOB() { return Lamda_nominal_DOB; };
     // Matrix2d get_matrix_jnt2bi(){return };

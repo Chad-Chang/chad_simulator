@@ -45,7 +45,7 @@ void Kinematics::set_DelayDATA() {
 }
 
 // pose error값 출력
-Vector2d Kinematics ::get_posRW_error(int idx) // idx = 0이면 현재 값, idx = 1이면 이전 값
+Vector2d Kinematics::get_posRW_error(int idx) // idx = 0이면 현재 값, idx = 1이면 이전 값
 {
 
   Vector2d RWpos_error;

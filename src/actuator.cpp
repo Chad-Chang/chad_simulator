@@ -4,8 +4,6 @@ using namespace std;
 
 Actuator::Actuator(int Motor_num, double motor_init_pos) {
   Motor_Num = Motor_num;
-  Motor_pos[0] = motor_init_pos;
-  Motor_initial_pos = motor_init_pos;
 }
 void Actuator::setDelayData()
 {
@@ -47,6 +45,8 @@ void Actuator::DATA_Receive(mjData* d) //Motor_num은 class를 선언할 때 Eth
   else if(Motor_Num == 11) {Motor_pos[0] = d->qpos[10]; Motor_vel[0] = d->qvel[10]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[10]);}
   // spine
   // else if(Motor_Num == 12) {Motor_pos = d->qpos[17]; printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
+  acc_cal(cutoff_acc_); 
+  setDelayData();
 
   }
 

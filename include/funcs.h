@@ -48,7 +48,7 @@ double lastx = 0;
 double lasty = 0;
 double Ts = 0.001;
 double cutoff = 150;
-Vector2d QFL_d_hat;  Vector2d QFR_d_hat;  Vector2d QRL_d_hat;   Vector2d QRR_d_hat;
+
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
 {
@@ -126,7 +126,7 @@ void init_save_data() // csv파일의 데이터 명을 지정하는 함수 -> �
 {
     //write name of the variable here (header)
     fprintf(fid, "t, ");
-    fprintf(fid, "dist, FL_hat, FR_hat, RL_hat, RR_hat"); // disturbace error
+    // fprintf(fid, "dist, FL_hat, FR_hat, RL_hat, RR_hat"); // disturbace error
 
     //Don't remove the newline
     fprintf(fid, "\n");
@@ -140,7 +140,7 @@ void save_data(const mjModel* m, mjData* d)
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f, %f,", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
+    // fprintf(fid, "%f, %f, %f, %f, %f,", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
     // printf("%f, %f, %f, %f, %f,\n", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
     //Don't remove the newline
     fprintf(fid, "\n");

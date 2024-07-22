@@ -13,20 +13,18 @@ extern double a;
 class RW_Controller : public J_Controller
 {
   private:
-    double pos_cutoff_freq = 150; 
-    double vel_cutoff_freq = 150; 
-    double PI = 3.141592;
-    double T = 0.001;
+    float pos_cutoff_freq = 150.; 
+    float vel_cutoff_freq = 150.; 
+    float PI = 3.141592;
+    float T = 0.001;
     // DOB
-    Vector2d rhs_dob;
-    Vector2d lhs_dob;
-    Matrix2d T_dob; // old값 setting 할려고 두개로 만듬
-    Matrix2d tauDist_hat; // old값 초기화 해줘야함
-
-    Vector2d rhs_fob;
-    Vector2d lhs_fob;
-    Vector2d T_fob; // old값 setting 할려고 두개로 만듬
-    Vector2d tauExt_hat[2]; // old값 초기화 해줘야함
+    Vector2d rhs_dob; Vector2d lhs_dob;
+    Matrix2d T_dob; // disturbance before Qfilter
+    Matrix2d tauDist_hat; //disturbance after Qfilter 
+    
+    Vector2d rhs_fob; Vector2d lhs_fob;  
+    Matrix2d T_fob; // temporal tau exter
+    Matrix2d tauExt_hat; // matrix form 
 
     double forceExt_hat[3]; // old값 초기화 해줘야함
 
@@ -89,12 +87,12 @@ class RW_Controller : public J_Controller
                                                                                           // Leg_num: FL-0 FR-1 RL-2 RR-3
     
 
-    //DOB
-    Vector2d DOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off
+    // //DOB
+    Vector2d DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);
     void DOBinitial();
 
-    //FOB 
-    void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off                                                       
+    // //FOB 
+    void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off     
     void FOBinitial();
 
     //admittance
