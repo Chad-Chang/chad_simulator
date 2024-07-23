@@ -144,7 +144,7 @@ void Kinematics::model_param_cal(double thm,double thb)
 // trajectory 정의 및 error 값 계산 
 void Kinematics::pos_trajectory(int traj_t, int Leg_num)
 {
-  double f_r = 0.01;
+  double f_r = 0.00;
   //Leg_Num = FL(0), FR(1), RL(2), RR(3) 
   switch(Leg_num) // switch뮨 마지막에 break 았쓰면 제대로 작동 안함.
   {

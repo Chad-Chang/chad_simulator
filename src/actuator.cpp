@@ -31,6 +31,9 @@ void Actuator::DATA_reset() //
 
 void Actuator::DATA_Receive(mjData* d) //Motor_num은 class를 선언할 때 Ethercat 통신 순서대로 이미 정해줌
 { 
+  setDelayData();
+  acc_cal(cutoff_acc_); 
+
   if(Motor_Num == 0) {Motor_pos[0] = d->qpos[16]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[16]);}
   else if(Motor_Num == 1) {Motor_pos[0] = d->qpos[17]; Motor_vel[0] = d->qvel[17]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
   else if(Motor_Num == 2) {Motor_pos[0] = d->qpos[18]; Motor_vel[0] = d->qvel[18]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[18]);}
@@ -45,9 +48,7 @@ void Actuator::DATA_Receive(mjData* d) //Motor_num은 class를 선언할 때 Eth
   else if(Motor_Num == 11) {Motor_pos[0] = d->qpos[10]; Motor_vel[0] = d->qvel[10]; }//printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[10]);}
   // spine
   // else if(Motor_Num == 12) {Motor_pos = d->qpos[17]; printf("motor pos = %f , qpose = %f\n", Motor_pos, d->qpos[17]);}
-  acc_cal(cutoff_acc_); 
-  setDelayData();
-
+  
   }
 
 

@@ -55,15 +55,26 @@ Vector4d th_Dgain = {0,0,0,0};
 MatrixXd leg_ctrl_input(2,4);
 
 // lhs_DOB 
-MatrixXf DOB_taubi_lhs(2,4); // col : 0~4 = FL FR RL RR
-MatrixXd leg_ctrl_input_DOB(2,4);
+MatrixXd DOB_taubi_lhs(2,4); // col : 0~4 = FL FR RL RR
+// DOB result
+MatrixXd distance_hat(2,4);
+// MatrixXd leg_ctrl_input_DOB(2,4);
 
 Matrix2d inertia_jBi2BiTq_FL;  Matrix2d inertia_jBi2BiTq_FR; 
 Matrix2d inertia_jBi2BiTq_RL;  Matrix2d inertia_jBi2BiTq_RR;
 
 Matrix2d jnt2bi; Matrix2d bi2jnt;
 
+Matrix2d DOB_Lambda_FL; Matrix2d DOB_Lambda_FR;
+Matrix2d DOB_Lambda_RL; Matrix2d DOB_Lambda_RR;
 
+Matrix2d FOB_Lambda_FL; Matrix2d FOB_Lambda_FR; 
+Matrix2d FOB_Lambda_RL; Matrix2d FOB_Lambda_RR;
+
+MatrixXd leg_motor_acc(2,4);
+
+
+Vector2d disturbance;
 double deri_cut = 200; double cut_off = 100;
 double HAA_ctrl_input[4];
 double gear_ratio = 1;
@@ -72,11 +83,12 @@ int traj_t = 0;
 
 void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 {   
-    leg_RW_des << 1,2,3,4,5,6,7,8,11,22,33,44,55,66,77,88;
+    // leg_RW_des << 1,2,3,4,5,6,7,8,11,22,33,44,55,66,77,88;
     if(loop_index % 4 ==0) // sampling time 0.0001
     {   
         traj_t ++;
         t++;
+        disturbance << sin(0.001* t), 0;
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
         for(int i = 0 ; i<4;i++)
         {   
@@ -85,7 +97,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
             leg_controller[i].rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
             leg_controller[i].j_setDelayData();
             leg_controller[i].rw_setDelayData();
+            // leg_controller[i].FOBRW(); // 인스턴스 내부에서 force값 저장
+
             leg_kinematics[i].set_DelayDATA();
+
         }
 
          /****************** joint angle read + joint delay + calculate acc******************/ 
@@ -94,6 +109,18 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         ACT_RLHAA.DATA_Receive(d);ACT_RLHIP.DATA_Receive(d);ACT_RLKNEE.DATA_Receive(d);
         ACT_RRHAA.DATA_Receive(d);ACT_RRHIP.DATA_Receive(d);ACT_RRKNEE.DATA_Receive(d);
 
+
+        // leg motor acc bi
+        leg_motor_acc.col(0) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
+        leg_motor_acc.col(1) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
+        leg_motor_acc.col(2) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
+        leg_motor_acc.col(3) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
+        
+        for(int i =0 ; i <4; i++)
+            leg_motor_acc.col(i) = jnt2bi*leg_motor_acc.col(i);
+        
+
+        
          ////////////////////// 시리얼 구조일때  - mujoco ////////////////////////
 
         leg_kinematics[0].Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),ACT_FLHIP.getMotor_vel(), ACT_FLKNEE.getMotor_vel()+ACT_FLHIP.getMotor_vel(),0); 
@@ -101,6 +128,16 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         leg_kinematics[2].Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos(),ACT_RLHIP.getMotor_vel(), ACT_RLKNEE.getMotor_vel()+ACT_RLHIP.getMotor_vel(),2);
         leg_kinematics[3].Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos(),ACT_RRHIP.getMotor_vel(), ACT_RRKNEE.getMotor_vel()+ACT_RRHIP.getMotor_vel(),3);
         
+        leg_kinematics[0].model_param_cal(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos());
+        leg_kinematics[1].model_param_cal(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos());
+        leg_kinematics[2].model_param_cal(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos());
+        leg_kinematics[3].model_param_cal(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos());
+
+        DOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_DOB(); DOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_DOB();
+        DOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_DOB(); DOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_DOB();
+
+        FOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_FOB(); FOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_FOB();
+        FOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_FOB(); FOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_FOB();
           
           //jacobian
         J_FL = leg_kinematics[0].get_RW_Jacobian(); J_FR = leg_kinematics[1].get_RW_Jacobian();
@@ -127,8 +164,11 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
             leg_RWpos_err_old.col(i) = leg_kinematics[i].get_posRW_error(1);
             leg_RWpid_output.col(i)(0) = leg_controller[i].rw_posPID(leg_RWpos_err.col(i), leg_RWpos_err_old.col(i), 0, i);
             leg_RWpid_output.col(i)(1) = leg_controller[i].rw_posPID(leg_RWpos_err.col(i), leg_RWpos_err_old.col(i), 1, i);
-            leg_ctrl_input.col(i) = gear_ratio * J_T_FL * leg_RWpid_output.col(i); 
         }
+        distance_hat.col(0) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),FOB_Lambda_FL, leg_motor_acc.col(0)(0),leg_motor_acc.col(0)(1),150,1);
+
+        for(int i = 0; i<4 ; i++)
+            leg_ctrl_input.col(i) = gear_ratio * J_T_FL * leg_RWpid_output.col(i); 
 
 // // joint space acceleration 계산
         HAA_ctrl_input[0] = leg_controller[0].j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
@@ -136,20 +176,30 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         HAA_ctrl_input[2] = leg_controller[2].j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_ctrl_input[3] = leg_controller[3].j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
 
+        disturbance = bi2jnt*J_T_FL * disturbance;
         ACT_FLHAA.DATA_Send(d,HAA_ctrl_input[0]);
-        ACT_FLHIP.DATA_Send(d,leg_ctrl_input.col(0)(0)+ leg_ctrl_input.col(0)(1));
-        ACT_FLKNEE.DATA_Send(d,leg_ctrl_input.col(0)(1));
+        ACT_FLHIP.DATA_Send(d,leg_ctrl_input.col(0)(0)+ leg_ctrl_input.col(0)(1) + disturbance[0]);
+        ACT_FLKNEE.DATA_Send(d,leg_ctrl_input.col(0)(1) + disturbance[1]) ;
+
         ACT_FRHAA.DATA_Send(d,HAA_ctrl_input[1]);
         ACT_FRHIP.DATA_Send(d,leg_ctrl_input.col(1)(0)+ leg_ctrl_input.col(1)(1));
         ACT_FRKNEE.DATA_Send(d,leg_ctrl_input.col(1)(1));
+
         ACT_RLHAA.DATA_Send(d,HAA_ctrl_input[2]);
         ACT_RLHIP.DATA_Send(d,leg_ctrl_input.col(2)(0)+ leg_ctrl_input.col(2)(1));
         ACT_RLKNEE.DATA_Send(d,leg_ctrl_input.col(2)(1));
+
         ACT_RRHAA.DATA_Send(d,HAA_ctrl_input[3]);
         ACT_RRHIP.DATA_Send(d,leg_ctrl_input.col(3)(0)+ leg_ctrl_input.col(3)(1));
         ACT_RRKNEE.DATA_Send(d,leg_ctrl_input.col(3)(1));
 
+        Vector2d bidist = jnt2bi*disturbance;
+        cout <<  "actual disturbacne  " << bidist[0]<< " "<< bidist[1]  << endl;
+        cout <<  "errer  " << distance_hat.col(0)(0)+bidist[0]<< " "<< distance_hat.col(0)(1) +bidist[1] << endl;
         
+        // leg_controller[1].DOBRW(leg_ctrl_input.col(1),FOB_Lambda_FR, leg_motor_acc.col(1)(0),leg_motor_acc.col(1)(1),150,1);
+        // leg_controller[2].DOBRW(leg_ctrl_input.col(2),FOB_Lambda_RL, leg_motor_acc.col(2)(0),leg_motor_acc.col(2)(1),150,1);
+        // leg_controller[3].DOBRW(leg_ctrl_input.col(3),FOB_Lambda_RR, leg_motor_acc.col(3)(0),leg_motor_acc.col(3)(1),150,1);
 }
     if (loop_index % data_frequency == 0) {     // loop_index를 data_frequency로 나눈 나머지가 0이면 데이터를 저장.
         save_data(m, d);

@@ -21,7 +21,7 @@ double T = 0.001;
 extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
-double disturbance;
+// double disturbance;
 
 // MuJoCo data structures
 mjModel* m = NULL;                  // MuJoCo model

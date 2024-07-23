@@ -172,6 +172,7 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,do
   result[0] = tauDist_hat(0,0);
   result[1] = tauDist_hat(1,0);
   
+  cout<< "DOB = " << result[0] << " " << result[1] << endl;
   return result;
   
 }
@@ -221,4 +222,5 @@ void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobi
   forceExt_hat[1] = forceExt_hat[0];
   
   forceExt_hat[0] = result[0]; // r direction
+  // cout << forceExt_hat[0]<< endl ;
 }
