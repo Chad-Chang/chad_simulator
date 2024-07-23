@@ -14,7 +14,9 @@
 #include "animation.h"
 #include "kinematics.h"
 #include "trajectory.h"
+#include <iostream>
 
+using namespace std;
 
 mjvFigure figPosRW;         // RW position tracking plot
 mjvFigure figFOB;           // RWFOB GRF estimation plot
@@ -46,11 +48,15 @@ trajectory tra_FL;
 trajectory tra_FR;
 trajectory tra_RL;
 trajectory tra_RR;
+Matrix2d jnt2bi; Matrix2d bi2jnt;
 
+Vector2d distubance;
+int t ;
 /***************** Main Controller *****************/
 void mycontroller(const mjModel* m, mjData* d)
-{
-   
+{   
+    t++ 
+    disturbance << sin(0.001*t),0; // r disturbance
     /* Controllers */
     int flag_DOB = 1;           // flag for switching ON/OFF RWDOB
     int flag_admitt = 0;        // flag for switching ON/OFF admittance control
@@ -73,32 +79,44 @@ void mycontroller(const mjModel* m, mjData* d)
     state_Model_RL.tau_bi = state_Model_RL.jacbRW_trans * ctrl_RL.PID_pos(&state_Model_RL);
     state_Model_RR.tau_bi = state_Model_RR.jacbRW_trans * ctrl_RR.PID_pos(&state_Model_RR);
     // DOB control
+
     state_Model_FL.tau_bi = state_Model_FL.tau_bi + ctrl_FL.DOBRW(&state_Model_FL, 150, flag_DOB);
     state_Model_FR.tau_bi = state_Model_FR.tau_bi + ctrl_FR.DOBRW(&state_Model_FR, 150, flag_DOB);
     state_Model_RL.tau_bi = state_Model_RL.tau_bi + ctrl_RL.DOBRW(&state_Model_RL, 150, flag_DOB);
     state_Model_RR.tau_bi = state_Model_RR.tau_bi + ctrl_RR.DOBRW(&state_Model_RR, 150, flag_DOB);
     
+    Vector2d d0 = ctrl_FL.DOBRW(&state_Model_FL, 150, flag_DOB);
+    cout << "dob = "<< d0 << endl;
+    // Vector2d d1 = ctrl_FR.DOBRW(&state_Model_FR, 150, flag_DOB);
+    // Vector2d d2 = ctrl_RL.DOBRW(&state_Model_RL, 150, flag_DOB);
+    // Vector2d d3 = ctrl_RR.DOBRW(&state_Model_RR, 150, flag_DOB);
+
+    // double disturbance = 1*sin(0.001*time_run); 
+
+    // printf("%f, %f, %f, %f, %f,\n", disturbance, d0(0),d1(0),d2(0),d3(0));
+    disturbance = state_Model_FL.jacbRW_trans * disturbance;
     // Force Observer
     ctrl_FL.FOBRW(&state_Model_FL, 100); // Rotating Workspace Force Observer (RWFOB)
     ctrl_FR.FOBRW(&state_Model_FR, 100); 
     ctrl_RL.FOBRW(&state_Model_RL, 100); 
     ctrl_RR.FOBRW(&state_Model_RR, 100); 
     
+    d -> qpos[2] = 0.5;
    // Torque input Biarticular
     d->ctrl[0] = 5000*(0-d->qpos[7]); //FLHAA  
-    d->ctrl[1] = state_Model_FL.tau_bi[0] + state_Model_FL.tau_bi[1] ;
+    d->ctrl[1] = state_Model_FL.tau_bi[0] + state_Model_FL.tau_bi[1] + disturbance;
     d->ctrl[2] = state_Model_FL.tau_bi[1];
 
     d->ctrl[3] = 5000*(0-d->qpos[10]); //FRHAA  
-    d->ctrl[4] = state_Model_FR.tau_bi[0] + state_Model_FR.tau_bi[1] ;
+    d->ctrl[4] = state_Model_FR.tau_bi[0] + state_Model_FR.tau_bi[1] +disturbance;
     d->ctrl[5] = state_Model_FR.tau_bi[1];
 
     d->ctrl[6] = 5000*(0-d->qpos[13]); //RLHAA  
-    d->ctrl[7] = state_Model_RL.tau_bi[0] + state_Model_RL.tau_bi[1] ;
+    d->ctrl[7] = state_Model_RL.tau_bi[0] + state_Model_RL.tau_bi[1] +disturbance;
     d->ctrl[8] = state_Model_RL.tau_bi[1];
 
     d->ctrl[9] = 5000*(0-d->qpos[16]); //FLHAA  
-    d->ctrl[10] = state_Model_RR.tau_bi[0] + state_Model_RR.tau_bi[1] ;
+    d->ctrl[10] = state_Model_RR.tau_bi[0] + state_Model_RR.tau_bi[1] +disturbance;
     d->ctrl[11] = state_Model_RR.tau_bi[1];
         
     
@@ -113,6 +131,10 @@ void mycontroller(const mjModel* m, mjData* d)
 /***************** Main Function *****************/
 int main(int argc, const char** argv)
 {
+    jnt2bi << 1,0,
+        1,1;
+    bi2jnt << 1,0,
+        -1,1;
     // activate software
     mj_activate("mjkey.txt");
 

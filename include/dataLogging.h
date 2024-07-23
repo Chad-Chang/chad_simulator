@@ -8,9 +8,9 @@ FILE* fid;
 int loop_index = 0;
 const int data_frequency = 1; // frequency at which data is written to a file
 
-char datapath[] = "../data/data.csv";
-char filename[] = "../data/scene.xml";
-char datafile[] = "../data.csv";
+char datapath[] = "data/data.csv";
+char filename[] = "scene.xml";
+char datafile[] = "data.csv";
 
 void init_save_data()
 {

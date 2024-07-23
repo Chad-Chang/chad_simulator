@@ -1,4 +1,5 @@
 reset
 make clean
 make
-./main
+./quad
+

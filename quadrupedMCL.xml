@@ -1,8 +1,8 @@
 <mujoco model="quadrupedMCL">
     <!-- <compiler angle="radian" meshdir="assets/meshes/" autolimits="true"/> -->
-    <compiler angle="radian" meshdir="../assets/meshes/"/>
+    <compiler angle="radian" meshdir="assets/meshes/"/>
 
-    <option timestep="0.0001" integrator="RK4" gravity = "0 0 -9.81" cone="elliptic" impratio="100">
+    <option timestep="0.0001" integrator="RK4" gravity = "0 0 0" cone="elliptic" impratio="100" >
       <flag sensornoise="enable" energy="enable" contact="enable" />
     </option>
 
@@ -93,10 +93,9 @@
             </body>
           </body>
 
-          
           <body name="torso_FR" pos="0 0 0" euler="0 0 0">
             <inertial pos="0.3 0 -0.12" euler="0 0 0" mass="2.5" diaginertia="0.0040 0.0106 0.0095" />
-            <joint name="HAA_FR" class="abduction" pos="0.1958 0 -0.095" />
+            <joint name="HAA_FR" class="abduction" pos="0.1958 0 -0.095"/>
             <geom type="mesh" mesh="torso_FR" material="dark" class="visual" />
             <site type="sphere" name="hip_FR" pos="0.3 0 -0.12" size="0.05" rgba="0 0.5 0 0.0" />
 
