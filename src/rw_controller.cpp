@@ -1,5 +1,6 @@
 #include "rw_controller.h"
-
+#include <iostream>
+using namespace std;
 RW_Controller::RW_Controller()
 {
 
@@ -133,40 +134,38 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,Ve
   double time_const = 1 / (2 * M_PI * cut_off); 
  // 정의는 여기서
   
- 
+    
+    T_dob.col(1) = T_dob.col(0);
+    // tauDist_hat(i,1) = tauDist_hat(i,0);
+    tauDist_hat.col(1) = tauDist_hat.col(0);
 
-  for(int i = 0 ; i <2 ; i++)
-  {
-    T_dob(i,1) = T_dob(i,0);
-    tauDist_hat(i,1) = tauDist_hat(i,0);
-  }
   
   
   lhs_dob = DOB_output; // desired - DOBoutput
+
   rhs_dob = Lamda_nominal_DOB * acc;
-  cout <<acc <<endl;
   // calculate dob output
-  for(int i=  0; i <2 ; i++) // 
-  {
-    T_dob(i,0) = lhs_dob[i] - rhs_dob[i];  
-  }
+  
+  T_dob.col(0) = lhs_dob - rhs_dob;  
+  
   // cout << T_dob.col(0) << endl;
   
   if(flag == true)
   {
-    for(int i = 0 ; i <2 ; i++)
-    {
-      tauDist_hat(i,0) = (2*(T_dob(i,0)+T_dob(i,1))-(T-2*time_const)*(tauDist_hat(i,1))/(T+2*time_const));
-    }
+    // for(int i = 0 ; i <2 ; i++)
+    // {
+    //   tauDist_hat(i,0) = (2*(T_dob(i,0)+T_dob(i,1))-(T-2*time_const)*(tauDist_hat(i,1))/(T+2*time_const));
+    // }
+    tauDist_hat.col(0) = (2*(T_dob.col(0)+T_dob.col(1))-(T-2*time_const)*(tauDist_hat.col(1))/(T+2*time_const));
     
   }
-  else // no DOB 
-  {
-    for(int i = 0 ; i <2 ; i++)
-    {
-      tauDist_hat(i,0) = 0 ;
-    }
-  }
+  // else // no DOB 
+  // {
+  //   for(int i = 0 ; i <2 ; i++)
+  //   {
+  //     tauDist_hat(i,0) = 0 ;
+  //   }
+  // }
   
 
   
@@ -175,7 +174,7 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,Ve
   result[0] = tauDist_hat(0,0);
   result[1] = tauDist_hat(1,0);
   
-  // cout<< "DOB = " << result[0] << " " << result[1] << endl;
+  cout<< "DOB = " << result[0] << " " << result[1] << endl;
   return result;
   
 }

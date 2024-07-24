@@ -12,15 +12,21 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 using namespace Eigen;
+using namespace std;
 
 
+extern MatrixXd leg_RWpos;
+extern double r_des;
+extern double motor_pos[3];
+extern Vector2d DOB_data;
 
 // #define G 9.81
 double PI = 3.141592;
 double T = 0.001;
-extern bool DOB_on = 0;
+// extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
+extern Vector2d disturbance; 
 // double disturbance;
 
 // MuJoCo data structures
@@ -126,7 +132,7 @@ void init_save_data() // csv파일의 데이터 명을 지정하는 함수 -> �
 {
     //write name of the variable here (header)
     fprintf(fid, "t, ");
-    // fprintf(fid, "dist, FL_hat, FR_hat, RL_hat, RR_hat"); // disturbace error
+    fprintf(fid, "r_des, r_curr,pos_mot, vel_mot, acc_mot, DOB, dist"); // disturbace error
 
     //Don't remove the newline
     fprintf(fid, "\n");
@@ -140,6 +146,9 @@ void save_data(const mjModel* m, mjData* d)
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
+    fprintf(fid, "%f , %f, %f, %f, %f, %f, %f", r_des, leg_RWpos(0,0),motor_pos[0], motor_pos[1], motor_pos[2],DOB_data[0], disturbance[0]);
+
+    // cout <<r_des << "  " <<leg_RWpos(0,0)<<endl;
     // fprintf(fid, "%f, %f, %f, %f, %f,", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
     // printf("%f, %f, %f, %f, %f,\n", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
     //Don't remove the newline

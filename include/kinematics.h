@@ -67,7 +67,7 @@ class Kinematics
     Kinematics();
 
     // trajectory와 error값을 계산해줌.
-    void pos_trajectory(int traj_t, int Leg_num);
+    double pos_trajectory(int traj_t, int Leg_num);
     void vel_trajectory(int traj_t, int Leg_num);
     
     // 다리 FK -> (biarticular 기준) 현재 다리의 각도를 이용해 rw각도로 변환

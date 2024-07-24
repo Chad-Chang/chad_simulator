@@ -26,6 +26,16 @@ Arr = table2array(T);
 % end
 
 figure(1);
-plot(Arr(5000:m,1),Arr(5000:m,2), 'r-' ,Arr(5000:m,1), Arr(5000:m,4), 'b-');
+plot(Arr(500:m,1),Arr(500:m,2), 'r-' ,Arr(500:m,1), Arr(500:m,3), 'b-');
 ylabel(cell2mat(VariableNames(2)))
 legend('ref','FL_hip')
+
+figure(2);
+plot(Arr(500:m,1),Arr(500:m,4), 'r-' ,Arr(500:m,1), Arr(500:m,5), 'b-',Arr(500:m,1), Arr(500:m,6), 'g-');
+% ylabel()
+legend('pos','vel', 'acc')
+
+figure(3);
+plot(Arr(500:m,1),Arr(500:m,7), 'r-' , Arr(500:m,1),Arr(500:m,8), 'b-' );
+% ylabel()
+legend('rdist')
