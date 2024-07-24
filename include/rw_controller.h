@@ -32,14 +32,14 @@ class RW_Controller : public J_Controller
     double deltaPos[3];
 
     // pose PID //
-    Vector4d RW_r_posPgain = {40,40,40,40}; // FL FR RL RR leg
+    Vector4d RW_r_posPgain = {4000,4000,4000,4000}; // FL FR RL RR leg
     Vector4d RW_r_posIgain;
-    Vector4d RW_r_posDgain;
+    Vector4d RW_r_posDgain = {20,20,20,20};
     Vector4d RW_r_posD_cutoff = {pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq};
 
-    Vector4d RW_th_posPgain = {40,40,40,40}; // FL FR RL RR
-    Vector4d RW_th_posIgain;
-    Vector4d RW_th_posDgain;
+    Vector4d RW_th_posPgain = {4000,4000,4000,4000}; // FL FR RL RR
+    Vector4d RW_th_posIgain= {0,0,0,0};
+    Vector4d RW_th_posDgain= {20,20,20,20};
     Vector4d RW_th_posD_cutoff= {pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq,pos_cutoff_freq};
 
     Vector2d RW_posPID_output;
@@ -88,11 +88,11 @@ class RW_Controller : public J_Controller
     
 
     // //DOB
-    Vector2d DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag);
+    Vector2d DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,Vector2d acc,double cut_off ,int flag);
     void DOBinitial();
 
     // //FOB 
-    void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,double acc_m,double acc_b ,double cut_off ,int flag);//flag 대신 of/off     
+    void FOBRW(Vector2d DOB_output,Matrix2d Lamda_nominal_FOB,Matrix2d JacobianTrans,Vector2d acc ,double cut_off ,int flag);//flag 대신 of/off     
     void FOBinitial();
 
     //admittance

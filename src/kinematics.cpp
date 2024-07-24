@@ -115,6 +115,7 @@ void Kinematics::model_param_cal(double thm,double thb)
     double M2 = m_shank * d_shank * L * cos(th2);
     double M12 = Jzz_shank;
 
+    
     Lamda_nominal_FOB(0,0) = M1;
     Lamda_nominal_FOB(0,1) = M12;
     Lamda_nominal_FOB(1,0) = M12;
@@ -150,7 +151,7 @@ void Kinematics::pos_trajectory(int traj_t, int Leg_num)
   {
     case 0: // FL position trajectory
     {
-      ref_r_pos[0] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L;
+      ref_r_pos[0] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L; // 2.601116;
       ref_th_pos[0] = PI/2;
       posRW_error[0][0] = ref_r_pos[0] - posRW[0];
       posRW_error[1][0] = ref_th_pos[0] - posRW[1];

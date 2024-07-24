@@ -124,7 +124,7 @@ void RW_Controller::init()
 }
 
 
-Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,double acc_m,double acc_b ,double cut_off ,int flag)
+Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,Vector2d acc ,double cut_off ,int flag)
 
 {
   //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
@@ -132,19 +132,25 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,do
   // UI에 넣어야할 내용은 cut_off, flag
   double time_const = 1 / (2 * M_PI * cut_off); 
  // 정의는 여기서
+  
+ 
 
-  Vector2d qddot;
-  qddot[0] = acc_m;
-  qddot[1] = acc_b;
+  for(int i = 0 ; i <2 ; i++)
+  {
+    T_dob(i,1) = T_dob(i,0);
+    tauDist_hat(i,1) = tauDist_hat(i,0);
+  }
+  
   
   lhs_dob = DOB_output; // desired - DOBoutput
-  rhs_dob = Lamda_nominal_DOB * qddot;
-  
+  rhs_dob = Lamda_nominal_DOB * acc;
+  cout <<acc <<endl;
   // calculate dob output
   for(int i=  0; i <2 ; i++) // 
   {
-    T_dob(i,0) = lhs_dob[i] - rhs_dob[i];
+    T_dob(i,0) = lhs_dob[i] - rhs_dob[i];  
   }
+  // cout << T_dob.col(0) << endl;
   
   if(flag == true)
   {
@@ -152,6 +158,7 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,do
     {
       tauDist_hat(i,0) = (2*(T_dob(i,0)+T_dob(i,1))-(T-2*time_const)*(tauDist_hat(i,1))/(T+2*time_const));
     }
+    
   }
   else // no DOB 
   {
@@ -161,24 +168,20 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,do
     }
   }
   
-  for(int i = 0 ; i <2 ; i++)
-  {
-    T_dob(i,1) = T_dob(i,0);
-    tauDist_hat(i,1) = tauDist_hat(i,0);
-  }
+
   
   Vector2d result;
   
   result[0] = tauDist_hat(0,0);
   result[1] = tauDist_hat(1,0);
   
-  cout<< "DOB = " << result[0] << " " << result[1] << endl;
+  // cout<< "DOB = " << result[0] << " " << result[1] << endl;
   return result;
   
 }
 
 
-void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobian_T_inv,double acc_m,double acc_b ,double cut_off ,int flag)
+void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobian_T_inv,Vector2d acc ,double cut_off ,int flag)
 {
   //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
   // old 값 initial 0으로 해줘야함
@@ -187,12 +190,9 @@ void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobi
   double time_const = 1 / (2 * M_PI * cut_off);
   Vector2d result;
   
-  Vector2d qddot;
-  qddot[0] = acc_m;
-  qddot[1] = acc_b;
   
   lhs_dob = DOB_output; // desired - DOBoutput
-  rhs_dob = Lamda_FOB * qddot;
+  rhs_dob = Lamda_FOB * acc;
   
   // calculate dob output
   for(int i=  0; i <2 ; i++) // 

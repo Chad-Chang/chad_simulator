@@ -57,13 +57,13 @@ MatrixXd leg_ctrl_input(2,4);
 // lhs_DOB 
 MatrixXd DOB_taubi_lhs(2,4); // col : 0~4 = FL FR RL RR
 // DOB result
-MatrixXd distance_hat(2,4);
+MatrixXd disturbance_hat(2,4);
 // MatrixXd leg_ctrl_input_DOB(2,4);
 
 Matrix2d inertia_jBi2BiTq_FL;  Matrix2d inertia_jBi2BiTq_FR; 
 Matrix2d inertia_jBi2BiTq_RL;  Matrix2d inertia_jBi2BiTq_RR;
 
-Matrix2d jnt2bi; Matrix2d bi2jnt;
+Matrix2d jnt2bi; Matrix2d bi2jnt;  Matrix2d tqbi2jtq;  Matrix2d jtq2tqbi;
 
 Matrix2d DOB_Lambda_FL; Matrix2d DOB_Lambda_FR;
 Matrix2d DOB_Lambda_RL; Matrix2d DOB_Lambda_RR;
@@ -88,11 +88,13 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
     {   
         traj_t ++;
         t++;
-        disturbance << sin(0.001* t), 0;
+        // disturbance << sin(0.001* t), 0;
+        disturbance<< 1,0;
+        
         // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
         for(int i = 0 ; i<4;i++)
         {   
-            leg_controller[i].init();
+            
             leg_controller[i].j_set_gain(100,0,1);
             leg_controller[i].rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
             leg_controller[i].j_setDelayData();
@@ -100,7 +102,6 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
             // leg_controller[i].FOBRW(); // 인스턴스 내부에서 force값 저장
 
             leg_kinematics[i].set_DelayDATA();
-
         }
 
          /****************** joint angle read + joint delay + calculate acc******************/ 
@@ -110,16 +111,14 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         ACT_RRHAA.DATA_Receive(d);ACT_RRHIP.DATA_Receive(d);ACT_RRKNEE.DATA_Receive(d);
 
 
-        // leg motor acc bi
+        // leg motor acc
         leg_motor_acc.col(0) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
         leg_motor_acc.col(1) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
         leg_motor_acc.col(2) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
         leg_motor_acc.col(3) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
-        
+        // cout << leg_motor_acc.col(0)<< endl;
         for(int i =0 ; i <4; i++)
             leg_motor_acc.col(i) = jnt2bi*leg_motor_acc.col(i);
-        
-
         
          ////////////////////// 시리얼 구조일때  - mujoco ////////////////////////
 
@@ -133,9 +132,12 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         leg_kinematics[2].model_param_cal(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos());
         leg_kinematics[3].model_param_cal(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos());
 
+
+        // DOB lambda : biarticular inertia
         DOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_DOB(); DOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_DOB();
         DOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_DOB(); DOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_DOB();
 
+        // FOB lambda : RW
         FOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_FOB(); FOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_FOB();
         FOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_FOB(); FOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_FOB();
           
@@ -149,10 +151,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
 //         /****************** Trajectory ******************/
         // col0 : pos, col1 : vel
-        leg_RW_des_FL = leg_trajectory[0].SLIP_traj();
-        leg_RW_des_FR = leg_trajectory[0].SLIP_traj();
-        leg_RW_des_RL = leg_trajectory[0].SLIP_traj();
-        leg_RW_des_RR = leg_trajectory[0].SLIP_traj();
+        // leg_RW_des_FL = leg_trajectory[0].SLIP_traj();
+        // leg_RW_des_FR = leg_trajectory[0].SLIP_traj();
+        // leg_RW_des_RL = leg_trajectory[0].SLIP_traj();
+        // leg_RW_des_RR = leg_trajectory[0].SLIP_traj();
 
         for(int i = 0 ; i<4;i++)
         {    
@@ -161,22 +163,35 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
             leg_kinematics[i].pos_trajectory(traj_t, 0); // temporal trajectory
             leg_RWpos.col(i) = leg_kinematics[i].get_posRW();
             leg_RWpos_err.col(i) = leg_kinematics[i].get_posRW_error(0);
+            // if(i == 0 ) cout << leg_RWpos_err.col(i) << endl;
             leg_RWpos_err_old.col(i) = leg_kinematics[i].get_posRW_error(1);
             leg_RWpid_output.col(i)(0) = leg_controller[i].rw_posPID(leg_RWpos_err.col(i), leg_RWpos_err_old.col(i), 0, i);
             leg_RWpid_output.col(i)(1) = leg_controller[i].rw_posPID(leg_RWpos_err.col(i), leg_RWpos_err_old.col(i), 1, i);
         }
-        distance_hat.col(0) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),FOB_Lambda_FL, leg_motor_acc.col(0)(0),leg_motor_acc.col(0)(1),150,1);
 
-        for(int i = 0; i<4 ; i++)
-            leg_ctrl_input.col(i) = gear_ratio * J_T_FL * leg_RWpid_output.col(i); 
+        if(5000 <traj_t  && traj_t< 5500) 
+            {
+                disturbance_hat.col(0) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),DOB_Lambda_FL, leg_motor_acc.col(0),20,1);
+                leg_ctrl_input.col(0) = gear_ratio * J_T_FL * leg_RWpid_output.col(0) + disturbance_hat.col(0); 
+            }
+        else
+            leg_ctrl_input.col(0) = gear_ratio * J_T_FL * leg_RWpid_output.col(0); 
+        
+        //     cout << disturbance_hat.col(0)<<endl;
+        // disturbance_hat.col(1) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),DOB_Lambda_FL, leg_motor_acc.col(0),150,1);
+        // disturbance_hat.col(2) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),DOB_Lambda_FL, leg_motor_acc.col(0),150,1);
+        // disturbance_hat.col(3) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),DOB_Lambda_FL, leg_motor_acc.col(0),150,1);
+
 
 // // joint space acceleration 계산
         HAA_ctrl_input[0] = leg_controller[0].j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
         HAA_ctrl_input[1] = leg_controller[1].j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
         HAA_ctrl_input[2] = leg_controller[2].j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
         HAA_ctrl_input[3] = leg_controller[3].j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
-
-        disturbance = bi2jnt*J_T_FL * disturbance;
+        
+        
+        disturbance = tqbi2jtq*disturbance;
+        // cout << disturbance<<endl;
         ACT_FLHAA.DATA_Send(d,HAA_ctrl_input[0]);
         ACT_FLHIP.DATA_Send(d,leg_ctrl_input.col(0)(0)+ leg_ctrl_input.col(0)(1) + disturbance[0]);
         ACT_FLKNEE.DATA_Send(d,leg_ctrl_input.col(0)(1) + disturbance[1]) ;
@@ -193,9 +208,9 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
         ACT_RRHIP.DATA_Send(d,leg_ctrl_input.col(3)(0)+ leg_ctrl_input.col(3)(1));
         ACT_RRKNEE.DATA_Send(d,leg_ctrl_input.col(3)(1));
 
-        Vector2d bidist = jnt2bi*disturbance;
-        cout <<  "actual disturbacne  " << bidist[0]<< " "<< bidist[1]  << endl;
-        cout <<  "errer  " << distance_hat.col(0)(0)+bidist[0]<< " "<< distance_hat.col(0)(1) +bidist[1] << endl;
+        Vector2d bidist = jtq2tqbi*disturbance;
+        // cout <<  "actual disturbacne  " << bidist[0]<< " "<< bidist[1]  << endl;
+        // cout <<  "errer  " << disturbance_hat.col(0)(0)+bidist[0]<< " "<< disturbance_hat.col(0)(1) +bidist[1] << endl;
         
         // leg_controller[1].DOBRW(leg_ctrl_input.col(1),FOB_Lambda_FR, leg_motor_acc.col(1)(0),leg_motor_acc.col(1)(1),150,1);
         // leg_controller[2].DOBRW(leg_ctrl_input.col(2),FOB_Lambda_RL, leg_motor_acc.col(2)(0),leg_motor_acc.col(2)(1),150,1);
@@ -210,7 +225,10 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 
 // main function
 int main(int argc, const char** argv)
-{
+{   
+    for(int i = 0 ; i<4 ; i++)
+        leg_controller[i].init();   
+    tqbi2jtq << 1, 1, 0, 1; jtq2tqbi << 1,-1,0,1;
     // 필요한 행렬
     jnt2bi << 1,0,
         1,1;
@@ -282,12 +300,18 @@ int main(int argc, const char** argv)
 
 // 초기 각도 입력    0.546812);Actuator ACT_RLKNEE(3, 2.59478)
     
-   d->qpos[8] = 0.546812;
+   d->qpos[8] = 0.546812; // 2.601116
    d->qpos[9] = 2.59478;
+        
+   d->qpos[8] = 0.7854; // 2.601116
+   d->qpos[9] = 2.3562;
+
    d->qpos[11] = 0.546812;
    d->qpos[12] = 2.59478;
+
    d->qpos[14] = 0.546812;
    d->qpos[15] = 2.59478;
+   
    d->qpos[17] = 0.546812;
    d->qpos[18] = 2.59478;
 
