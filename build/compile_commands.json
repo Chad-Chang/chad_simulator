@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/build",
+  "command": "/usr/bin/c++   -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/data -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/include -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/../../include -I/usr/include/eigen3  -g   -o CMakeFiles/main.dir/main.cpp.o -c /home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/main.cpp",
+  "file": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/main.cpp"
+},
+{
+  "directory": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/build",
+  "command": "/usr/bin/c++   -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/data -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/include -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/../../include -I/usr/include/eigen3  -g   -o CMakeFiles/main.dir/source/controller.cpp.o -c /home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/controller.cpp",
+  "file": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/controller.cpp"
+},
+{
+  "directory": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/build",
+  "command": "/usr/bin/c++   -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/data -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/include -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/../../include -I/usr/include/eigen3  -g   -o CMakeFiles/main.dir/source/filter.cpp.o -c /home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/filter.cpp",
+  "file": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/filter.cpp"
+},
+{
+  "directory": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/build",
+  "command": "/usr/bin/c++   -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/data -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/include -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/../../include -I/usr/include/eigen3  -g   -o CMakeFiles/main.dir/source/kinematics.cpp.o -c /home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/kinematics.cpp",
+  "file": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/kinematics.cpp"
+},
+{
+  "directory": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/build",
+  "command": "/usr/bin/c++   -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/data -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/include -I/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/../../include -I/usr/include/eigen3  -g   -o CMakeFiles/main.dir/source/trajectory.cpp.o -c /home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/trajectory.cpp",
+  "file": "/home/chad/Documents/mujoco-2.2.1/myProject/Quad_Template/source/trajectory.cpp"
+}
+]

@@ -9,6 +9,8 @@ FILE* fid_FR;
 FILE* fid_RL;
 FILE* fid_RR;
 FILE* fid_Trunk;
+extern Vector2d d_hat;
+extern double disturb;
 
 int loop_index = 0;
 const int data_frequency = 100; // frequency at which data is written to a file
@@ -22,79 +24,67 @@ char datapath_Trunk[] = "../data/data_trunk.csv";
 // XML File Logging
 char filename[] = "../data/scene.xml";
 
-void init_save_data_leg(FILE* fid)
+void init_save_data_leg()
 {
     // This function is called once and is used to get the headers
     // Write name of the variable here (header)
     // comma(,) should be omitted in the last line.
     
-    fprintf(fid, "t, ");
-    fprintf(fid, "r_ref, qr_ref, r_act, qr_act, ");
-    fprintf(fid, "tau[0], tau[1]");
+    fprintf(fid_FL, "t, ");
+    fprintf(fid_FL, "dist_ref, dist_hat ");
     
     
     // Don't remove the newline
-    fprintf(fid, "\n");
+    fprintf(fid_FL, "\n");
 }
 
-void save_data_leg(const mjModel* m, mjData* d, StateModel_* state_model,vector<Eigen::VectorXd> Ctrl_data,FILE* fid)
+void save_data_leg(const mjModel* m, mjData* d)
 {
     // This function is called at a set frequency,put data here.
     // Data here should correspond to headers in init_save_data()
     // Seperate data by a space %f followed by space
     // comma(,) should be omitted in the last line.
-    double touch = d->sensordata[8];
-    double grf_x = d->sensordata[9];
-    double grf_y = d->sensordata[10];
-    double grf_z = d->sensordata[11];
-    double trunk_vel_y = d->sensordata[15];
-
-    double cartesian_grf_x = grf_x * cos(pi - state_model->q_bi[1]) - grf_y * sin(pi - state_model->q_bi[1]);
-    double cartesian_grf_y = grf_x * sin(pi - state_model->q_bi[1]) + grf_y * cos(pi - state_model->q_bi[1]); 
-
-    double grf_r = cartesian_grf_y * cos(state_model->posRW[1] - pi / 2) + cartesian_grf_x * sin(state_model->posRW[1] - pi / 2);
-    double grf_thetar = cartesian_grf_y * sin(state_model->posRW[1] - pi / 2) - cartesian_grf_x * cos(state_model->posRW[1] - pi / 2);
-
-    fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f, ", state_model->posRW_ref[0], state_model->posRW_ref[1], state_model->posRW[0], state_model->posRW[1]);
-    fprintf(fid, "%f, %f", state_model->tau_bi[0], state_model->tau_bi[1]);
+   
+    fprintf(fid_FL, "%f, ", d->time);
+    fprintf(fid_FL, "%f, %f ", disturb, -d_hat[0]);
+    
 
     // // Don't remove the newline
-    fprintf(fid, "\n");
+    fprintf(fid_FL, "\n");
 
 
 }
 
-void init_save_data_trunk(FILE* fid)
-{
-    // This function is called once and is used to get the headers
-    // Write name of the variable here (header)
-    // comma(,) should be omitted in the last line.
+// void init_save_data_trunk(FILE* fid)
+// {
+//     // This function is called once and is used to get the headers
+//     // Write name of the variable here (header)
+//     // comma(,) should be omitted in the last line.
 
-    fprintf(fid, "t,");
-    fprintf(fid, "touch_FL, touch_FR, touch_RL, touch_RR");
+//     fprintf(fid, "t,");
+//     fprintf(fid, "touch_FL, touch_FR, touch_RL, touch_RR");
 
-    // Don't remove the newline
-    fprintf(fid, "\n");
-}
+//     // Don't remove the newline
+//     fprintf(fid, "\n");
+// }
 
-void save_data_trunk(const mjModel* m, mjData* d, FILE* fid)
-{
-    // This function is called once and is used to get the headers
-    // Write name of the variable here (header)
-    // comma(,) should be omitted in the last line.
+// void save_data_trunk(const mjModel* m, mjData* d, FILE* fid)
+// {
+//     // This function is called once and is used to get the headers
+//     // Write name of the variable here (header)
+//     // comma(,) should be omitted in the last line.
 
-    double touch_FL = d->sensordata[18];
-    double touch_FR = d->sensordata[22];
-    double touch_RL = d->sensordata[26];
-    double touch_RR = d->sensordata[30];
+//     double touch_FL = d->sensordata[18];
+//     double touch_FR = d->sensordata[22];
+//     double touch_RL = d->sensordata[26];
+//     double touch_RR = d->sensordata[30];
 
-    // touch sensor 넣기, GRF 측정값들 여기에 넣기
-    fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f, %f, %f, %f ", touch_FL, touch_FR, touch_RL, touch_RR);
+//     // touch sensor 넣기, GRF 측정값들 여기에 넣기
+//     fprintf(fid, "%f, ", d->time);
+//     fprintf(fid, "%f, %f, %f, %f ", touch_FL, touch_FR, touch_RL, touch_RR);
 
-    // Don't remove the newline
-    fprintf(fid, "\n");
-};
+//     // Don't remove the newline
+//     fprintf(fid, "\n");
+// };
 
 #endif // DATALOGGING_H_

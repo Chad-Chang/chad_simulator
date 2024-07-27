@@ -17,102 +17,183 @@
 #include "trajectory.h"
 
 
+
+Vector2d lowpassfilter2(Vector2d input, Vector2d input_old, Vector2d output_old, double cutoff_freq)
+{
+    //double cutoff_freq = 100;
+    double time_const = 1 / (2 * pi * cutoff_freq);
+    Vector2d output ;
+    output <<0, 0;
+
+    output = (Ts * (input + input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
+
+    return output;
+}
+Vector2d tustin_derivative2(Vector2d input, Vector2d input_old, Vector2d output_old, double cutoff_freq)
+{
+    double time_const = 1 / (2 * pi * cutoff_freq);
+    Vector2d output;
+    output << 0,0;
+
+    output = (2 * (input - input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
+
+    return output;
+}
+
+Matrix2d cal_param(Matrix2d jacbRW,Matrix2d jacbRW_trans,Vector2d q_bi)
+{
+    /* Trunk Parameters */
+    double m_hip = 2.5;
+    double m_trunk_front = 10.;
+    double m_trunk_rear = 18.;
+    double m_trunk = 4 * m_hip + m_trunk_front + m_trunk_rear;
+
+    /* Leg Parameters */
+    double L = 0.25;
+    double d_thigh = 0.11017; // local position of CoM of thigh
+    double d_shank = 0.12997; // local position of CoM of shank
+    // printf("d_thigh : %f, d_shank : %f \n", d_thigh, d_shank);
+
+    double m_thigh = 1.017; // mass of thigh link
+    double m_shank = 0.143; // mass of shank link
+    double m_leg = m_thigh + m_shank;
+    double m_total = m_trunk + 4 * m_leg;
+    // printf("m_thigh : %f, m_shank : %f \n", m_thigh, m_shank);
+
+    double Izz_thigh = 0.0057;     // MoI of thigh w.r.t. CoM
+    double Izz_shank = 8.0318e-04; // MoI of shank w.r.t. CoM
+    // printf("Izz_thigh : %f, Izz_shank : %f \n", Izz_thigh, Izz_shank);
+
+    double Jzz_thigh =
+        Izz_thigh + m_thigh * pow(d_thigh, 2); // MoI of thigh w.r.t. HFE
+    double Jzz_shank =
+        Izz_shank + m_shank * pow(d_shank, 2); // MoI of thigh w.r.t. KFE
+    // printf("Jzz_thigh : %f, Jzz_shank : %f \n", Jzz_thigh, Jzz_shank);
+
+    double M1 = Jzz_thigh + m_shank * pow(L, 2);
+    double M2 = m_shank * d_shank * L * cos(q_bi[1]);
+    double M12 = Jzz_shank;
+
+    double JzzR_thigh  = Jzz_thigh + Jzz_shank + m_shank * pow(L, 2) - 2 * m_shank * d_shank * L * cos(q_bi[1]);
+    double JzzR_couple = Jzz_thigh + m_shank * pow(L, 2) - Jzz_shank;
+    double JzzR_shank = Jzz_thigh + Jzz_shank+ m_shank * pow(L, 2) + 2 * m_shank * d_shank * L * cos(q_bi[1]);
+
+    Matrix2d MatInertia_RW;
+    MatInertia_RW(0,0) = JzzR_thigh / (4 * pow(L, 2) * pow(sin(q_bi[1] / 2), 2));
+    MatInertia_RW(0,1) = JzzR_couple / (2 * pow(L, 2) * sin(q_bi[1]));
+    MatInertia_RW(1,0) = JzzR_couple / (2 * pow(L, 2) * sin(q_bi[1]));
+    MatInertia_RW(1,1) = JzzR_shank / (4 * pow(L, 2) * pow(cos(q_bi[1] / 2), 2));
+        
+    
+    Matrix2d Inertia_DOB;
+    Inertia_DOB(0,0) = MatInertia_RW(0,0);
+    Inertia_DOB(0,1) = 0;
+    Inertia_DOB(1,0) = 0;
+    Inertia_DOB(1,1) = MatInertia_RW(1,1);
+
+    
+    Matrix2d Lamda_nominal_DOB = jacbRW_trans*Inertia_DOB*jacbRW;
+
+    return Lamda_nominal_DOB;
+}
+
+
 mjvFigure figPosRW;         // RW position tracking plot
 mjvFigure figFOB;           // RWFOB GRF estimation plot
 mjvFigure figTrunkState;    // Trunk state plot
 
 double simEndtime = 100;	// Simulation End Time
-// state parameters
-StateModel_ state_Model_FL;
-StateModel_ state_Model_FR;
-StateModel_ state_Model_RL;
-StateModel_ state_Model_RR;
 
-const int leg_FL_no = 0;
-const int leg_FR_no = 3;
-const int leg_RL_no = 6;
-const int leg_RR_no = 9;
+double disturb;
 
-controller ctrl_FL; // other class is in main loop
-controller ctrl_FR;
-controller ctrl_RL;
-controller ctrl_RR;
+Vector2d leg_pid_output;
+Matrix2d lhs;
+Matrix2d Qlhs;
+Matrix2d rhs;
+Vector2d d_hat;
+Vector2d ctrl_input;
 
-kinematics kin_FL;
-kinematics kin_FR;
-kinematics kin_RL;
-kinematics kin_RR;
+Matrix2d Lambda;
 
-trajectory tra_FL;
-trajectory tra_FR;
-trajectory tra_RL;
-trajectory tra_RR;
+Vector2d posRW_ref ; 
+Matrix2d pos_err;
+Matrix2d pos_err_tus;
+Vector2d posRW ; 
 
-/* Controllers */
-int flag_DOB = 1;           // flag for switching ON/OFF RWDOB
-int flag_admitt = 0;        // flag for switching ON/OFF admittance control
-/* Trajectory selection*/
-int cmd_motion_type = 0;   
-int mode_admitt = 1; // This is must be ON
+Vector2d motor_pos;
+Matrix2d motor_pos_bi;
+Matrix2d motor_vel_bi;
+Matrix2d motor_acc_bi;
+
+Matrix2d RWJ;
+Matrix2d RWJ_T;
+
+double cutoff = 120;
 
 /***************** Main Controller *****************/
 void mycontroller(const mjModel* m, mjData* d)
-{
+{   
+      
+    // d->qpos[0] = 0;
+    // d->qpos[1] = 0;
+    d->qpos[2] =  0.5;
+    double L  = 0.25;
     double time_run = d->time;
+    disturb = 2*sin(d->time);
+    // disturb = 10;
+
+    /* Trajectory Generation */
+    posRW_ref << 0.3536 + 0.1*sin(d->time), pi/2;
+    motor_pos << d->qpos[8] , d->qpos[9];
+    motor_pos_bi.col(0) << motor_pos[0], motor_pos[0]+motor_pos[1];
+    motor_vel_bi.col(0) = tustin_derivative2(motor_pos_bi.col(0), motor_pos_bi.col(1),motor_vel_bi.col(1),300);
+    motor_acc_bi.col(0) = tustin_derivative2(motor_vel_bi.col(0), motor_vel_bi.col(1),motor_acc_bi.col(1),cutoff);
     
-    //Admittance Control
-    ctrl_FL.admittanceCtrl(&state_Model_FL,5,2,5000, flag_admitt); //parameter(omega_n,zeta,k)
-    ctrl_FR.admittanceCtrl(&state_Model_FL,5,2,5000, flag_admitt);
-    ctrl_RL.admittanceCtrl(&state_Model_FL,5,2,5000, flag_admitt);
-    ctrl_RR.admittanceCtrl(&state_Model_FL,5,2,5000, flag_admitt);
 
-    // PID Control
-    ctrl_FL.pid_gain_pos(5500,200, 150); //(kp,kd,freq)
-    ctrl_FR.pid_gain_pos(5500,200, 150); 
-    ctrl_RL.pid_gain_pos(5500,200, 150); 
-    ctrl_RR.pid_gain_pos(5500,200, 150); 
+    RWJ(0, 0) = sin(motor_pos[1]/ 2);
+    RWJ(0, 1) = -sin(motor_pos[1] / 2);
+    RWJ(1, 0) = cos(motor_pos[1] / 2);
+    RWJ(1, 1) = cos(motor_pos[1]/2);
+    RWJ = L * RWJ;
+    RWJ_T = RWJ.transpose();
 
-    state_Model_FL.tau_bi = state_Model_FL.jacbRW_trans * ctrl_FL.PID_pos(&state_Model_FL); // RW position feedback
-    state_Model_FR.tau_bi = state_Model_FR.jacbRW_trans * ctrl_FR.PID_pos(&state_Model_FR);
-    state_Model_RL.tau_bi = state_Model_RL.jacbRW_trans * ctrl_RL.PID_pos(&state_Model_RL);
-    state_Model_RR.tau_bi = state_Model_RR.jacbRW_trans * ctrl_RR.PID_pos(&state_Model_RR);
-    // DOB control
-    state_Model_FL.tau_bi = state_Model_FL.tau_bi + ctrl_FL.DOBRW(&state_Model_FL, 150, flag_DOB);
-    state_Model_FR.tau_bi = state_Model_FR.tau_bi + ctrl_FR.DOBRW(&state_Model_FR, 150, flag_DOB);
-    state_Model_RL.tau_bi = state_Model_RL.tau_bi + ctrl_RL.DOBRW(&state_Model_RL, 150, flag_DOB);
-    state_Model_RR.tau_bi = state_Model_RR.tau_bi + ctrl_RR.DOBRW(&state_Model_RR, 150, flag_DOB);
+    posRW[0] = 2 * L * cos((motor_pos[1]) / 2);
+    posRW[1] = 0.5 * (motor_pos_bi.col(0)(0)+motor_pos_bi.col(0)(1));
+    pos_err.col(0) = posRW_ref - posRW;
+
+    Lambda = cal_param(RWJ, RWJ_T,motor_pos_bi.col(0));
     
-    // Force Observer
-    ctrl_FL.FOBRW(&state_Model_FL, 100); // Rotating Workspace Force Observer (RWFOB)
-    ctrl_FR.FOBRW(&state_Model_FR, 100); 
-    ctrl_RL.FOBRW(&state_Model_RL, 100); 
-    ctrl_RR.FOBRW(&state_Model_RR, 100); 
+
+    d->ctrl[0] = 5000*(0-d->qpos[7]); //FLHAA   
+    d->ctrl[1] = ctrl_input[0]+ctrl_input[1] +disturb;
+    d->ctrl[2] = ctrl_input[1];
+
+    pos_err_tus.col(0) = tustin_derivative2(pos_err.col(0),pos_err.col(1),pos_err_tus.col(1),cutoff);
+    leg_pid_output = RWJ_T*(5500*pos_err.col(0) + 200*pos_err_tus.col(0));
+
+    lhs.col(0) = ctrl_input;
+    Qlhs.col(0)= lowpassfilter2(lhs.col(0), lhs.col(1), Qlhs.col(1),cutoff);
+    rhs.col(0) = Lambda * motor_acc_bi.col(0);
     
-   // Torque input Biarticular
-    d->ctrl[0] = 5000*(0-d->qpos[7]); //FLHAA  
-    d->ctrl[1] = state_Model_FL.tau_bi[0] + state_Model_FL.tau_bi[1] ;
-    d->ctrl[2] = state_Model_FL.tau_bi[1];
+    d_hat = Qlhs.col(0) - rhs.col(0);
+    cout << d_hat[0]<<endl;
 
-    d->ctrl[3] = 5000*(0-d->qpos[10]); //FRHAA  
-    d->ctrl[4] = state_Model_FR.tau_bi[0] + state_Model_FR.tau_bi[1] ;
-    d->ctrl[5] = state_Model_FR.tau_bi[1];
+    ctrl_input = leg_pid_output + d_hat ; 
 
-    d->ctrl[6] = 5000*(0-d->qpos[13]); //RLHAA  
-    d->ctrl[7] = state_Model_RL.tau_bi[0] + state_Model_RL.tau_bi[1] ;
-    d->ctrl[8] = state_Model_RL.tau_bi[1];
+    lhs.col(1) = lhs.col(0);
+    Qlhs.col(1) = Qlhs.col(0);
+    pos_err.col(1) = pos_err.col(0);
+    motor_pos_bi.col(1) = motor_pos_bi.col(0);
+    motor_vel_bi.col(1) = motor_vel_bi.col(0);
+    motor_acc_bi.col(1) = motor_acc_bi.col(0);
+    pos_err_tus.col(1) = pos_err_tus.col(0) ;
+    pos_err.col(1) = pos_err.col(0) ;
 
-    d->ctrl[9] = 5000*(0-d->qpos[16]); //FLHAA  
-    d->ctrl[10] = state_Model_RR.tau_bi[0] + state_Model_RR.tau_bi[1] ;
-    d->ctrl[11] = state_Model_RR.tau_bi[1];
-        
     
 
     if (loop_index % data_frequency == 0) {  
-        save_data_leg(m, d, &state_Model_FL, ctrl_FL.Data_Return(ctrl_FL),fid_FL);
-        save_data_leg(m, d, &state_Model_FR, ctrl_FR.Data_Return(ctrl_FR),fid_FR);
-        save_data_leg(m, d, &state_Model_RL, ctrl_RL.Data_Return(ctrl_RL),fid_RL);
-        save_data_leg(m, d, &state_Model_RR, ctrl_RR.Data_Return(ctrl_RR),fid_RR);
-        save_data_trunk(m, d, fid_Trunk);
+        // save_data_leg(m,d,fid_FL);
+        save_data_leg(m,d);
     }
     loop_index += 1;
 }
@@ -121,6 +202,8 @@ void mycontroller(const mjModel* m, mjData* d)
 /***************** Main Function *****************/
 int main(int argc, const char** argv)
 {
+    
+
     // activate software
     mj_activate("mjkey.txt");
 
@@ -171,27 +254,12 @@ int main(int argc, const char** argv)
     cam.elevation = arr_view[1];
     cam.distance = arr_view[2];
     cam.lookat[0] = arr_view[3];
-    cam.lookat[1] = arr_view[4];
-    cam.lookat[2] = arr_view[5];
-    
-    fid_FL = fopen(datapath_FL, "w");
-    fid_FR = fopen(datapath_FR, "w");
-    fid_RL = fopen(datapath_RL, "w");
-    fid_RR = fopen(datapath_RR, "w");
-    fid_Trunk = fopen(datapath_Trunk, "w");
-
-    init_save_data_leg(fid_FL);
-    init_save_data_leg(fid_FR);
-    init_save_data_leg(fid_RL);
-    init_save_data_leg (fid_RR);
-    init_save_data_trunk(fid_Trunk);
-
     
     // Initialization
     
     d->qpos[0] = 0;
     d->qpos[1] = 0;
-    d->qpos[2] =  0.3536;   // qpos[0,1,2] : trunk pos                                                                                                                 
+    d->qpos[2] =  0.4;   // qpos[0,1,2] : trunk pos                                                                                                                 
                         // qpos[3,4,5.6] : trunk orientation quaternian
     
     d->qpos[3] = -0.73;
@@ -212,21 +280,10 @@ int main(int argc, const char** argv)
     d->qpos[17] = pi/4; //RRHIP        //d->ctrl[10] RRHIP
     d->qpos[18] = pi/2; //RRKNEE       //d->ctrl[11] RRKNEE
     
-
-    kin_FL.model_param_cal(m, d, &state_Model_FL); // state init is before. Caution Error.
-    kin_FR.model_param_cal(m, d, &state_Model_FR);
-    kin_RL.model_param_cal(m, d, &state_Model_RL);
-    kin_RR.model_param_cal(m, d, &state_Model_RR);
-    
-    kin_FL.state_init(m,d, &state_Model_FL);
-    kin_FR.state_init(m,d, &state_Model_FR); 
-    kin_RL.state_init(m,d, &state_Model_RL); 
-    kin_RR.state_init(m,d, &state_Model_RR);  
-    
     // custom controller
     mjcb_control = mycontroller;
-    
-
+    fid_FL = fopen(datapath_FL, "w");
+    init_save_data_leg();
     /***************** Simulation Loop *****************/
     // use the first while condition if you want to simulate for a period.
     int i = 0;
@@ -239,69 +296,11 @@ int main(int argc, const char** argv)
 
         mjtNum simstart = d->time;
         //printf(" %f  %f \n", d->ctrl[0], d->ctrl[1]);
-        state_Model_FL.time = d->time;
         while (d->time - simstart < 1.0 / 60.0)
         {
-            /* Trajectory Generation */
-            int cmd_motion_type = 0;
-            int mode_admitt = 1;
-            
-            if (cmd_motion_type == 0)   // Squat
-            {
-                tra_FL.Squat(d->time, &state_Model_FL);
-                tra_FR.Squat(d->time, &state_Model_FR);
-                tra_RL.Squat(d->time, &state_Model_RL);
-                tra_RR.Squat(d->time, &state_Model_RR);
-            }
-            else
-            {  
-                tra_FL.Hold(&state_Model_FL);  // Hold stance
-                tra_FR.Hold(&state_Model_FR);
-                tra_RL.Hold(&state_Model_RL);
-                tra_RR.Hold(&state_Model_RR);
-            }
-            
-            kin_FL.sensor_measure(m, d, &state_Model_FL, leg_FL_no); // get joint sensor data & calculate biarticular angles
-            kin_FR.sensor_measure(m, d, &state_Model_FR, leg_FR_no);
-            kin_RL.sensor_measure(m, d, &state_Model_RL, leg_RL_no);
-            kin_RR.sensor_measure(m, d, &state_Model_RR, leg_RR_no);
-
-            kin_FL.model_param_cal(m, d,&state_Model_FL); // calculate model parameters
-            kin_FR.model_param_cal(m, d,&state_Model_FR);
-            kin_RL.model_param_cal(m, d,&state_Model_RL);
-            kin_RR.model_param_cal(m, d,&state_Model_RR);
-
-
-            kin_FL.jacobianRW(&state_Model_FL);
-            kin_FR.jacobianRW(&state_Model_FR);
-            kin_RL.jacobianRW(&state_Model_RL);
-            kin_RR.jacobianRW(&state_Model_RR);            // calculate RW Jacobian
-            
-            if (d->time < 10)
-            {
-                //printf("ref: %f \n", state_Model_FL.posRW_ref[1]);
-                //printf(" qddot_bi_tustin(0) = %f ,%f ", state_Model_FL.qddot_bi_tustin[0],state_Model_FL.qddot_bi_tustin[1]);
-                //printf(" qddot_bi(1) = %f ,%f \n", state_Model_FL.qddot_bi[0],state_Model_FL.qddot_bi[1]);
-    
-            }
-            
-            
-            kin_FL.fwdKinematics_cal(&state_Model_FL);     // calculate RW Kinematics
-            kin_FR.fwdKinematics_cal(&state_Model_FR);
-            kin_RL.fwdKinematics_cal(&state_Model_RL);
-            kin_RR.fwdKinematics_cal(&state_Model_RR);
 
             mj_step(m, d);
            
-            kin_FL.state_update(&state_Model_FL);
-            kin_FR.state_update(&state_Model_FR);
-            kin_RL.state_update(&state_Model_RL);
-            kin_RR.state_update(&state_Model_RR);
-
-            ctrl_FL.ctrl_update();
-            ctrl_FR.ctrl_update();
-            ctrl_RL.ctrl_update();
-            ctrl_RR.ctrl_update();
 
         }
 
@@ -318,14 +317,7 @@ int main(int argc, const char** argv)
         mjrRect viewport = { 0, 0, 0, 0 };
         glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
 
-        
 
-
-        // update scene and render
-        //opt.frame = mjFRAME_WORLD;
-        //cam.lookat[0] = d->qpos[0];
-        //cam.lookat[1] = 0;
-        //cam.lookat[2] = 0;
         mjv_updateScene(m, d, &opt, NULL, &cam, mjCAT_ALL, &scn);
         mjr_render(viewport, &scn, &con);
         //printf("{%f, %f, %f, %f, %f, %f};\n",cam.azimuth,cam.elevation, cam.distance,cam.lookat[0],cam.lookat[1],cam.lookat[2]);
@@ -337,10 +329,11 @@ int main(int argc, const char** argv)
         glfwPollEvents();
     }
 
+    
     // free visualization storage
     mjv_freeScene(&scn);
     mjr_freeContext(&con);
-
+    
     // free MuJoCo model and data, deactivate
     mj_deleteData(d);
     mj_deleteModel(m);
