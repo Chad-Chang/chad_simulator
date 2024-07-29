@@ -156,7 +156,7 @@ void Kinematics::model_param_cal(double thm,double thb)
 double Kinematics::pos_trajectory(int traj_t, int Leg_num)
 { 
   double r_des ;
-  double f_r = 0.00;
+  double f_r = 0.0;
   //Leg_Num = FL(0), FR(1), RL(2), RR(3) 
   switch(Leg_num) // switch뮨 마지막에 break 았쓰면 제대로 작동 안함.
   {
@@ -209,61 +209,6 @@ double Kinematics::pos_trajectory(int traj_t, int Leg_num)
       th_pos_error[3] = posRW_error[1][0];
       r_des = ref_r_pos[0];
       return r_des;
-      break;
-    }
-  }
-
-
-}
-
-// trajectory 정의 및 error 값 계산 
-void Kinematics::vel_trajectory(int traj_t, int Leg_num)
-{
-  double f_r = 0.01;
-  //Leg_Num = FL(0), FR(1), RL(2), RR(3) 
-  switch(Leg_num) // switch뮨 마지막에 break 았쓰면 제대로 작동 안함.
-  {
-    case 0: // FL vel trajectory
-    {
-      ref_r_vel[0] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L;
-      ref_th_vel[0] = 0;
-      velRW_error[0][0] = ref_r_vel[0] - velRW[0];
-      velRW_error[1][0] = ref_th_vel[0] - velRW[1];
-      r_vel_error[0] = velRW_error[0][0];
-      th_vel_error[0] = velRW_error[1][0];
-      break;
-    }
-
-    case 1: // FR vel trajectory
-    {
-      ref_r_vel[1] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L;
-      ref_th_vel[1] = 0;
-      velRW_error[0][0] = ref_r_vel[1] - velRW[0];
-      velRW_error[1][0] = ref_th_vel[1] - velRW[1];
-      
-      r_vel_error[1] = velRW_error[0][0];
-      th_vel_error[1] = velRW_error[1][0];
-      break;
-    }
-    case 2: // RL vel trajectory
-    {
-      ref_r_vel[2] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L;
-      ref_th_vel[2] = 0;
-      velRW_error[0][0] = ref_r_vel[2] - velRW[0];
-      velRW_error[1][0] = ref_th_vel[2] - velRW[1];
-      r_vel_error[2] = velRW_error[0][0];
-      th_vel_error[2] = velRW_error[1][0];
-      break;
-    }
-
-    case 3: // RR vel trajectory
-    {
-      ref_r_vel[3] = 0.1*sin(2*PI*f_r*0.001*traj_t) + L;
-      ref_th_vel[3] = 0;
-      velRW_error[0][0] = ref_r_vel[3] - velRW[0];
-      velRW_error[1][0] = ref_th_vel[3] - velRW[1];
-      r_vel_error[3] = velRW_error[0][0];
-      th_vel_error[3] = velRW_error[1][0];
       break;
     }
   }

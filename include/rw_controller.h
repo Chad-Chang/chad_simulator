@@ -18,7 +18,7 @@ class RW_Controller : public J_Controller
     float PI = 3.141592;
     float T = 0.001;
     // DOB
-    Vector2d rhs_dob; Vector2d lhs_dob;
+    Vector2d rhs_dob; Matrix2d lhs_dob;
     Matrix2d T_dob; // disturbance before Qfilter
     Matrix2d tauDist_hat; //disturbance after Qfilter 
     

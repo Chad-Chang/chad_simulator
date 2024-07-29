@@ -133,93 +133,68 @@ Vector2d RW_Controller::DOBRW(Vector2d DOB_output ,Matrix2d Lamda_nominal_DOB,Ve
   // UI에 넣어야할 내용은 cut_off, flag
   double time_const = 1 / (2 * M_PI * cut_off); 
  // 정의는 여기서
-  
-    
-    T_dob.col(1) = T_dob.col(0);
-    // tauDist_hat(i,1) = tauDist_hat(i,0);
-    tauDist_hat.col(1) = tauDist_hat.col(0);
-
+ 
   
   
-  lhs_dob = DOB_output; // desired - DOBoutput
+  lhs_dob.col(0) = DOB_output; // desired - DOBoutput
 
   rhs_dob = Lamda_nominal_DOB * acc;
   // calculate dob output
-  
-  T_dob.col(0) = lhs_dob - rhs_dob;  
-  
-  // cout << T_dob.col(0) << endl;
-  
-  if(flag == true)
-  {
-    // for(int i = 0 ; i <2 ; i++)
-    // {
-    //   tauDist_hat(i,0) = (2*(T_dob(i,0)+T_dob(i,1))-(T-2*time_const)*(tauDist_hat(i,1))/(T+2*time_const));
-    // }
-    tauDist_hat.col(0) = (2*(T_dob.col(0)+T_dob.col(1))-(T-2*time_const)*(tauDist_hat.col(1))/(T+2*time_const));
-    
-  }
-  // else // no DOB 
-  // {
-  //   for(int i = 0 ; i <2 ; i++)
-  //   {
-  //     tauDist_hat(i,0) = 0 ;
-  //   }
-  // }
-  
+  T_dob.col(0) = (2*(lhs_dob.col(0)+lhs_dob.col(1))-(T-2*time_const)*(T_dob.col(1))/(T+2*time_const));
+  Vector2d result ;
+  result = rhs_dob - T_dob.col(0);
 
-  
-  Vector2d result;
-  
-  result[0] = tauDist_hat(0,0);
-  result[1] = tauDist_hat(1,0);
-  
+   
+    
+    T_dob.col(1) = T_dob.col(0);
+    // tauDist_hat(i,1) = tauDist_hat(i,0);
+    lhs_dob.col(1) =  lhs_dob.col(0);
   cout<< "DOB = " << result[0] << " " << result[1] << endl;
   return result;
   
 }
 
 
-void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobian_T_inv,Vector2d acc ,double cut_off ,int flag)
-{
-  //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
-  // old 값 initial 0으로 해줘야함
-  // UI에 넣어야할 내용은 cut_off, flag
-  // Jacobian도 가져와야함
-  double time_const = 1 / (2 * M_PI * cut_off);
-  Vector2d result;
+// void RW_Controller::FOBRW(Vector2d DOB_output,Matrix2d Lamda_FOB,Matrix2d Jacobian_T_inv,Vector2d acc ,double cut_off ,int flag)
+// {
+//   //DOB_output이 한 step 이전 값이다. 그래서 여기 안에서 setting 안해줘도됨
+//   // old 값 initial 0으로 해줘야함
+//   // UI에 넣어야할 내용은 cut_off, flag
+//   // Jacobian도 가져와야함
+//   double time_const = 1 / (2 * M_PI * cut_off);
+//   Vector2d result;
   
   
-  lhs_dob = DOB_output; // desired - DOBoutput
-  rhs_dob = Lamda_FOB * acc;
+//   lhs_dob = DOB_output; // desired - DOBoutput
+//   rhs_dob = Lamda_FOB * acc;
   
-  // calculate dob output
-  for(int i=  0; i <2 ; i++) // 
-  {
-    T_fob(i,0) = lhs_dob[i] - rhs_dob[i];
-  }
+//   // calculate dob output
+//   for(int i=  0; i <2 ; i++) // 
+//   {
+//     T_fob(i,0) = lhs_dob[i] - rhs_dob[i];
+//   }
   
-  if(flag == true)
-  {
-    for(int i = 0 ; i< 2 ; i++)
-      tauExt_hat(i,0) = (2* (T_fob(i,0) + T_fob(i,1)) - (T - 2*time_const)*tauExt_hat(i,1))/(T+2*time_const);
-  }
-  else
-  {
-    for(int i = 0 ; i <2 ; i++)
-      tauExt_hat(i,0) = 0 ;
-  }
+//   if(flag == true)
+//   {
+//     for(int i = 0 ; i< 2 ; i++)
+//       tauExt_hat(i,0) = (2* (T_fob(i,0) + T_fob(i,1)) - (T - 2*time_const)*tauExt_hat(i,1))/(T+2*time_const);
+//   }
+//   else
+//   {
+//     for(int i = 0 ; i <2 ; i++)
+//       tauExt_hat(i,0) = 0 ;
+//   }
   
-  result = Jacobian_T_inv * tauExt_hat.col(0); // 0th colum is current tauExt_hat
+//   result = Jacobian_T_inv * tauExt_hat.col(0); // 0th colum is current tauExt_hat
   
-  //old값 update
-  T_fob.col(1) = T_fob.col(0);
-  tauExt_hat.col(1) = tauExt_hat.col(0) ;
+//   //old값 update
+//   T_fob.col(1) = T_fob.col(0);
+//   tauExt_hat.col(1) = tauExt_hat.col(0) ;
   
-  // buble arrangement before 
-  forceExt_hat[2] = forceExt_hat[1];
-  forceExt_hat[1] = forceExt_hat[0];
+//   // buble arrangement before 
+//   forceExt_hat[2] = forceExt_hat[1];
+//   forceExt_hat[1] = forceExt_hat[0];
   
-  forceExt_hat[0] = result[0]; // r direction
-  // cout << forceExt_hat[0]<< endl ;
-}
+//   forceExt_hat[0] = result[0]; // r direction
+//   // cout << forceExt_hat[0]<< endl ;
+// }

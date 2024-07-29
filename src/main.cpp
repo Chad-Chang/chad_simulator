@@ -6,202 +6,191 @@
 #include "j_controller.h"
 #include "trajectory.h"
 // #include ""
+double Ts =0.0001;
 
-RW_Controller leg_controller[4];
-Kinematics leg_kinematics[4]; // 0: FL, 1: FR, 2: RL, 3: RR
-Actuator ACT_RLHAA(5, 0);Actuator ACT_RLHIP(4, 0.546812);Actuator ACT_RLKNEE(3, 2.59478);
-Actuator ACT_RRHAA(0, 0);Actuator ACT_RRHIP(1, 0.546812);Actuator ACT_RRKNEE(2, 2.59478);
-Actuator ACT_FRHAA(11, 0);Actuator ACT_FRHIP(10, 0.546812);Actuator ACT_FRKNEE(9, 2.59478);
-Actuator ACT_FLHAA(6, 0);Actuator ACT_FLHIP(7, 0.546812);Actuator ACT_FLKNEE(8, 2.59478);
-trajectory leg_trajectory[4];
-
-// Jacobian
-Matrix2d J_FL;  Matrix2d J_FR;  Matrix2d J_RL;  Matrix2d J_RR;
-Matrix2d J_T_FL;  Matrix2d J_T_FR;  Matrix2d J_T_RL;  Matrix2d J_T_RR;
-Matrix2d J_T_inv_FL;  Matrix2d J_T_inv_FR;  Matrix2d J_T_inv_RL;  Matrix2d J_T_inv_RR;
-
-// Controller output : RW PID INPUT//
-MatrixXd leg_RWpid_output(2,4);
-
-//trajectory
-Matrix2d leg_RW_des_FL; // col 0 : position r, theta, col 1 : vel r, theta
-Matrix2d leg_RW_des_FR; // col 0 : position r, theta, col 1 : vel r, theta
-Matrix2d leg_RW_des_RL; // col 0 : position r, theta, col 1 : vel r, theta
-Matrix2d leg_RW_des_RR; // col 0 : position r, theta, col 1 : vel r, theta
 Vector2d DOB_data;
+Vector2d lowpassfilter2(Vector2d input, Vector2d input_old, Vector2d output_old, double cutoff_freq)
+{
+    //double cutoff_freq = 100;
+    double time_const = 1 / (2 * pi * cutoff_freq);
+    Vector2d output ;
+    output <<0, 0;
+
+    output = (Ts * (input + input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
+
+    return output;
+}
+Vector2d tustin_derivative2(Vector2d input, Vector2d input_old, Vector2d output_old, double cutoff_freq)
+{
+    double time_const = 1 / (2 * pi * cutoff_freq);
+    Vector2d output;
+    output << 0,0;
+
+    output = (2 * (input - input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
+
+    return output;
+}
+
+Matrix2d cal_param(Matrix2d jacbRW,Matrix2d jacbRW_trans,Vector2d q_bi)
+{
+    /* Trunk Parameters */
+    double m_hip = 2.5;
+    double m_trunk_front = 10.;
+    double m_trunk_rear = 18.;
+    double m_trunk = 4 * m_hip + m_trunk_front + m_trunk_rear;
+
+    /* Leg Parameters */
+    double L = 0.25;
+    double d_thigh = 0.11017; // local position of CoM of thigh
+    double d_shank = 0.12997; // local position of CoM of shank
+    // printf("d_thigh : %f, d_shank : %f \n", d_thigh, d_shank);
+
+    double m_thigh = 1.017; // mass of thigh link
+    double m_shank = 0.143; // mass of shank link
+    double m_leg = m_thigh + m_shank;
+    double m_total = m_trunk + 4 * m_leg;
+    // printf("m_thigh : %f, m_shank : %f \n", m_thigh, m_shank);
+
+    double Izz_thigh = 0.0057;     // MoI of thigh w.r.t. CoM
+    double Izz_shank = 8.0318e-04; // MoI of shank w.r.t. CoM
+    // printf("Izz_thigh : %f, Izz_shank : %f \n", Izz_thigh, Izz_shank);
+
+    double Jzz_thigh =
+        Izz_thigh + m_thigh * pow(d_thigh, 2); // MoI of thigh w.r.t. HFE
+    double Jzz_shank =
+        Izz_shank + m_shank * pow(d_shank, 2); // MoI of thigh w.r.t. KFE
+    // printf("Jzz_thigh : %f, Jzz_shank : %f \n", Jzz_thigh, Jzz_shank);
+
+    double M1 = Jzz_thigh + m_shank * pow(L, 2);
+    double M2 = m_shank * d_shank * L * cos(q_bi[1]);
+    double M12 = Jzz_shank;
+
+    double JzzR_thigh  = Jzz_thigh + Jzz_shank + m_shank * pow(L, 2) - 2 * m_shank * d_shank * L * cos(q_bi[1]);
+    double JzzR_couple = Jzz_thigh + m_shank * pow(L, 2) - Jzz_shank;
+    double JzzR_shank = Jzz_thigh + Jzz_shank+ m_shank * pow(L, 2) + 2 * m_shank * d_shank * L * cos(q_bi[1]);
+
+    Matrix2d MatInertia_RW;
+    MatInertia_RW(0,0) = JzzR_thigh / (4 * pow(L, 2) * pow(sin(q_bi[1] / 2), 2));
+    MatInertia_RW(0,1) = JzzR_couple / (2 * pow(L, 2) * sin(q_bi[1]));
+    MatInertia_RW(1,0) = JzzR_couple / (2 * pow(L, 2) * sin(q_bi[1]));
+    MatInertia_RW(1,1) = JzzR_shank / (4 * pow(L, 2) * pow(cos(q_bi[1] / 2), 2));
+        
+    
+    Matrix2d Inertia_DOB;
+    Inertia_DOB(0,0) = MatInertia_RW(0,0);
+    Inertia_DOB(0,1) = 0;
+    Inertia_DOB(1,0) = 0;
+    Inertia_DOB(1,1) = MatInertia_RW(1,1);
+
+    
+    Matrix2d Lamda_nominal_DOB = jacbRW_trans*Inertia_DOB*jacbRW;
+
+    return Lamda_nominal_DOB;
+}
 
 
-double r_des;
+mjvFigure figPosRW;         // RW position tracking plot
+mjvFigure figFOB;           // RWFOB GRF estimation plot
+mjvFigure figTrunkState;    // Trunk state plot
 
+double simEndtime = 100;	// Simulation End Time
 
-// posRW
-MatrixXd leg_RWpos(2,4); // 0: FL, 1: FR, 2: RL, 3: RR
-MatrixXd leg_RWpos_err(2,4); // 0: FL, 1: FR, 2: RL, 3: RR
-MatrixXd leg_RWpos_err_old(2,4); // 0: FL, 1: FR, 2: RL, 3: RR
+double disturb;
 
-// velRW
-MatrixXd leg_RWvel(2,4);
-MatrixXd leg_RWvel_err(2,4);
-MatrixXd leg_RWvel_err_old(2,4);
+Vector2d leg_pid_output;
+Matrix2d lhs;
+Matrix2d Qlhs;
+Matrix2d rhs;
+Matrix2d Qrhs;
+Vector2d d_hat;
+Vector2d ctrl_input;
+Vector2d Qd_hat;
 
+Matrix2d Lambda;
 
-// Vector2d velRW_err;
+Vector2d posRW_ref ; 
+Matrix2d pos_err;
+Matrix2d pos_err_tus;
+Vector2d posRW ; 
 
-Vector4d r_Pgain = {4000,40000,40000,40000};
-Vector4d r_Igain = {0,0,0,0};
-Vector4d r_Dgain = {200,0,0,0};
-Vector4d th_Pgain = {4000,40000,40000,40000};
-Vector4d th_Igain = {0,0,0,0};
-Vector4d th_Dgain = {200,0,0,0};
+Vector2d motor_pos;
 
-// motor control input
-MatrixXd leg_ctrl_input(2,4);
+Matrix2d motor_pos_bi;
+Matrix2d motor_vel_bi;
+Matrix2d motor_acc_bi;
 
-// lhs_DOB 
-MatrixXd DOB_taubi_lhs(2,4); // col : 0~4 = FL FR RL RR
-// DOB result
-MatrixXd disturbance_hat(2,4);
-// MatrixXd leg_ctrl_input_DOB(2,4);
+Matrix2d RWJ;
+Matrix2d RWJ_T;
 
-Matrix2d inertia_jBi2BiTq_FL;  Matrix2d inertia_jBi2BiTq_FR; 
-Matrix2d inertia_jBi2BiTq_RL;  Matrix2d inertia_jBi2BiTq_RR;
-
-Matrix2d jnt2bi; Matrix2d bi2jnt;  Matrix2d tqbi2jtq;  Matrix2d jtq2tqbi;
-
-Matrix2d DOB_Lambda_FL; Matrix2d DOB_Lambda_FR;
-Matrix2d DOB_Lambda_RL; Matrix2d DOB_Lambda_RR;
-
-Matrix2d FOB_Lambda_FL; Matrix2d FOB_Lambda_FR; 
-Matrix2d FOB_Lambda_RL; Matrix2d FOB_Lambda_RR;
-
-MatrixXd leg_motor_acc(2,4);
-double motor_pos[3];
-
-Vector2d disturbance;
-double deri_cut = 200; double cut_off = 100;
-double HAA_ctrl_input[4];
-double gear_ratio = 1;
-int t = 0;
-int traj_t = 0;
 
 void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 {   
-    // leg_RW_des << 1,2,3,4,5,6,7,8,11,22,33,44,55,66,77,88;
-    if(loop_index % 4 ==0) // sampling time 0.0001
-    {   
-        traj_t ++;
-        t++;
-        disturbance << sin(0.001* t), 0;
-        // disturbance<< 1,0; // 바이아티큘러
+ // d->qpos[0] = 0;
+    // d->qpos[1] = 0;
+    d->qpos[2] =  0.5;
+    d->qpos[3] = 0.7071;
+    d->qpos[4] = -0.7071;
+    double L  = 0.25;
+    double time_run = d->time;
+    disturb = 20*sin(d->time *10);
+
+
+    /* Trajectory Generation */
+    // time_run = 0;
+    posRW_ref << 0.3536 + 0.1*sin(time_run*0), pi/2;
+    motor_pos << d->qpos[8] , d->qpos[9];
+
+
+    motor_pos_bi.col(0) << motor_pos[0], motor_pos[0]+motor_pos[1];
+    motor_vel_bi.col(0) = tustin_derivative2(motor_pos_bi.col(0), motor_pos_bi.col(1),motor_vel_bi.col(1),300);
+    motor_acc_bi.col(0) = tustin_derivative2(motor_vel_bi.col(0), motor_vel_bi.col(1),motor_acc_bi.col(1),cutoff);
     
-        // joint PID gain setting  => j_set_gain(Pgain, Igain, Dgain) 
-        for(int i = 0 ; i<4;i++)
-        {   
-            leg_controller[i].j_set_gain(100,0,1);
-            leg_controller[i].rw_set_gain(r_Pgain,r_Igain, r_Dgain, th_Pgain, th_Igain, th_Dgain);
-            leg_controller[i].j_setDelayData();
-            leg_controller[i].rw_setDelayData();
-            // leg_controller[i].FOBRW(); // 인스턴스 내부에서 force값 저장
 
-            leg_kinematics[i].set_DelayDATA();
-        }
+    RWJ(0, 0) = sin(motor_pos[1]/ 2);
+    RWJ(0, 1) = -sin(motor_pos[1] / 2);
+    RWJ(1, 0) = cos(motor_pos[1] / 2);
+    RWJ(1, 1) = cos(motor_pos[1]/2);
+    RWJ = L * RWJ;
+    RWJ_T = RWJ.transpose();
 
-         /****************** joint angle read + joint delay + calculate acc******************/ 
-        
-//         /****************** Trajectory ******************/
-        // col0 : pos, col1 : vel
-        // leg_RW_des_FL = leg_trajectory[0].SLIP_traj();
-        // leg_RW_des_FR = leg_trajectory[0].SLIP_traj();
-        // leg_RW_des_RL = leg_trajectory[0].SLIP_traj();
-        // leg_RW_des_RR = leg_trajectory[0].SLIP_traj();
+    posRW[0] = 2 * L * cos((motor_pos[1]) / 2);
+    posRW[1] = 0.5 * (motor_pos_bi.col(0)(0)+motor_pos_bi.col(0)(1));
+    pos_err.col(0) = posRW_ref - posRW;
 
-        r_des = leg_kinematics[0].pos_trajectory(traj_t, 0); // temporal trajectory
-        leg_RWpos_err.col(0) = leg_kinematics[0].get_posRW_error(0);
-        leg_RWpos_err_old.col(0) = leg_kinematics[0].get_posRW_error(1);
-        leg_RWpid_output.col(0)(0) = leg_controller[0].rw_posPID(leg_RWpos_err.col(0), leg_RWpos_err_old.col(0), 0, 0); // rw force
-            leg_RWpid_output.col(0)(1) = leg_controller[0].rw_posPID(leg_RWpos_err.col(0), leg_RWpos_err_old.col(0), 1, 0); // PID 출력
-        leg_ctrl_input.col(0) = gear_ratio * J_T_FL * leg_RWpid_output.col(0);//+ disturbance_hat.col(0);  // biarticular torque
-        
-        // // joint space acceleration 계산
-        HAA_ctrl_input[0] = leg_controller[0].j_posPID(0,ACT_FLHAA.getMotor_pos(),T,cutoff);
-        HAA_ctrl_input[1] = leg_controller[1].j_posPID(0,ACT_FRHAA.getMotor_pos(),T,cutoff);
-        HAA_ctrl_input[2] = leg_controller[2].j_posPID(0,ACT_RLHAA.getMotor_pos(),T,cutoff);
-        HAA_ctrl_input[3] = leg_controller[3].j_posPID(0,ACT_RRHAA.getMotor_pos(),T,cutoff);
+    Lambda = cal_param(RWJ, RWJ_T,motor_pos_bi.col(0));
+ 
+    d->ctrl[0] = 5000*(0-d->qpos[7]); //FLHAA   
+    d->ctrl[1] = ctrl_input[0]+ctrl_input[1] +disturb;
+    d->ctrl[2] = ctrl_input[1];
 
+    pos_err_tus.col(0) = tustin_derivative2(pos_err.col(0),pos_err.col(1),pos_err_tus.col(1),cutoff);
+    leg_pid_output = RWJ_T*(1000*pos_err.col(0) + 100*pos_err_tus.col(0));
 
-        
-        // disturbance = tqbi2jtq*disturbance;
-        // cout << disturbance<<endl;
-        ACT_FLHAA.DATA_Send(d,HAA_ctrl_input[0]);
-        ACT_FLHIP.DATA_Send(d,leg_ctrl_input.col(0)(0)+ leg_ctrl_input.col(0)(1) + disturbance[0]);
-        ACT_FLKNEE.DATA_Send(d,leg_ctrl_input.col(0)(1)) ;
+    lhs.col(0) = ctrl_input;
+    Qlhs.col(0)= lowpassfilter2(lhs.col(0), lhs.col(1), Qlhs.col(1),cutoff);
+    
+    rhs.col(0) = Lambda * motor_acc_bi.col(0);
+    
+    Qrhs.col(0)= lowpassfilter2(rhs.col(0), rhs.col(1), Qrhs.col(1),cutoff);
 
-        ACT_FRHAA.DATA_Send(d,HAA_ctrl_input[1]);
-        ACT_FRHIP.DATA_Send(d,leg_ctrl_input.col(1)(0)+ leg_ctrl_input.col(1)(1));
-        ACT_FRKNEE.DATA_Send(d,leg_ctrl_input.col(1)(1));
+    d_hat = Qlhs.col(0) - rhs.col(0);
+    Qd_hat = Qlhs.col(0) - Qrhs.col(0);
+    cout << d_hat[0]<<endl;
+    DOB_data  = -d_hat;
+    // d_hat = Qd_hat;
+    ctrl_input = leg_pid_output + d_hat; 
 
-        ACT_RLHAA.DATA_Send(d,HAA_ctrl_input[2]);
-        ACT_RLHIP.DATA_Send(d,leg_ctrl_input.col(2)(0)+ leg_ctrl_input.col(2)(1));
-        ACT_RLKNEE.DATA_Send(d,leg_ctrl_input.col(2)(1));
+    rhs.col(1) = rhs.col(0);
+    lhs.col(1) = lhs.col(0);
+    Qlhs.col(1) = Qlhs.col(0);
+    Qrhs.col(1) = Qrhs.col(0);
+    pos_err.col(1) = pos_err.col(0);
+    motor_pos_bi.col(1) = motor_pos_bi.col(0);
+    motor_vel_bi.col(1) = motor_vel_bi.col(0);
+    motor_acc_bi.col(1) = motor_acc_bi.col(0);
+    pos_err_tus.col(1) = pos_err_tus.col(0) ;
+    pos_err.col(1) = pos_err.col(0) ;
 
-        ACT_RRHAA.DATA_Send(d,HAA_ctrl_input[3]);
-        ACT_RRHIP.DATA_Send(d,leg_ctrl_input.col(3)(0)+ leg_ctrl_input.col(3)(1));
-        ACT_RRKNEE.DATA_Send(d,leg_ctrl_input.col(3)(1));
-
-        ACT_FLHAA.DATA_Receive(d);ACT_FLHIP.DATA_Receive(d);ACT_FLKNEE.DATA_Receive(d);
-        ACT_FRHAA.DATA_Receive(d);ACT_FRHIP.DATA_Receive(d);ACT_FRKNEE.DATA_Receive(d);
-        ACT_RLHAA.DATA_Receive(d);ACT_RLHIP.DATA_Receive(d);ACT_RLKNEE.DATA_Receive(d);
-        ACT_RRHAA.DATA_Receive(d);ACT_RRHIP.DATA_Receive(d);ACT_RRKNEE.DATA_Receive(d);
-        motor_pos[0] = ACT_FLHIP.getMotor_pos();
-        motor_pos[1] = ACT_FLHIP.getMotor_vel();
-        motor_pos[2] = ACT_FLHIP.getMotor_acc();
-
-        // leg motor acc
-        leg_motor_acc.col(0) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
-        leg_motor_acc.col(1) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
-        leg_motor_acc.col(2) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
-        leg_motor_acc.col(3) << ACT_FLHIP.getMotor_acc(),ACT_FLKNEE.getMotor_acc();
-        // cout << leg_motor_acc.col(0)<< endl;
-        for(int i =0 ; i <4; i++)
-            leg_motor_acc.col(i) = jnt2bi*leg_motor_acc.col(i);
-        
-         ////////////////////// 시리얼 구조일때  - mujoco ////////////////////////
-
-        leg_kinematics[0].Cal_RW(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos(),ACT_FLHIP.getMotor_vel(), ACT_FLKNEE.getMotor_vel()+ACT_FLHIP.getMotor_vel(),0); 
-        leg_kinematics[1].Cal_RW(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos(),ACT_FRHIP.getMotor_vel(), ACT_FRKNEE.getMotor_vel()+ACT_FRHIP.getMotor_vel(),1);
-        leg_kinematics[2].Cal_RW(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos(),ACT_RLHIP.getMotor_vel(), ACT_RLKNEE.getMotor_vel()+ACT_RLHIP.getMotor_vel(),2);
-        leg_kinematics[3].Cal_RW(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos(),ACT_RRHIP.getMotor_vel(), ACT_RRKNEE.getMotor_vel()+ACT_RRHIP.getMotor_vel(),3);
-        
-
-        // DOB lambda : biarticular inertia
-        DOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_DOB(); DOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_DOB(); // 
-        DOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_DOB(); DOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_DOB();
-
-        // FOB lambda : RW
-        FOB_Lambda_FL =  leg_kinematics[0].get_Lamda_nominal_FOB(); FOB_Lambda_FR =  leg_kinematics[1].get_Lamda_nominal_FOB();
-        FOB_Lambda_RL =  leg_kinematics[2].get_Lamda_nominal_FOB(); FOB_Lambda_RR =  leg_kinematics[3].get_Lamda_nominal_FOB();
-          
-          //jacobian
-        J_FL = leg_kinematics[0].get_RW_Jacobian(); J_FR = leg_kinematics[1].get_RW_Jacobian();
-        J_RL = leg_kinematics[2].get_RW_Jacobian(); J_RR = leg_kinematics[3].get_RW_Jacobian();
-        J_T_FL = leg_kinematics[0].get_RW_Jacobian_Trans();  J_T_FR = leg_kinematics[1].get_RW_Jacobian_Trans();
-        J_T_RL = leg_kinematics[2].get_RW_Jacobian_Trans();  J_T_RR = leg_kinematics[3].get_RW_Jacobian_Trans();
-        J_T_inv_FL = leg_kinematics[0].get_RW_Jacobian_Trans_inv();  J_T_FR = leg_kinematics[1].get_RW_Jacobian_Trans_inv();
-        J_T_inv_RL = leg_kinematics[2].get_RW_Jacobian_Trans_inv();  J_T_RR = leg_kinematics[3].get_RW_Jacobian_Trans_inv();
-
-        leg_kinematics[0].model_param_cal(ACT_FLHIP.getMotor_pos(), ACT_FLKNEE.getMotor_pos()+ACT_FLHIP.getMotor_pos()); // 현재 포즈에 맞는 inertia 계산
-        leg_kinematics[1].model_param_cal(ACT_FRHIP.getMotor_pos(), ACT_FRKNEE.getMotor_pos()+ACT_FRHIP.getMotor_pos());
-        leg_kinematics[2].model_param_cal(ACT_RLHIP.getMotor_pos(), ACT_RLKNEE.getMotor_pos()+ACT_RLHIP.getMotor_pos());
-        leg_kinematics[3].model_param_cal(ACT_RRHIP.getMotor_pos(), ACT_RRKNEE.getMotor_pos()+ACT_RRHIP.getMotor_pos());
-
-        // if(2 <d-> time && d-> time < 2.001) {
-            disturbance_hat.col(0) = leg_controller[0].DOBRW(leg_ctrl_input.col(0),DOB_Lambda_FL, leg_motor_acc.col(0),300,1);
-            DOB_data = disturbance_hat.col(0);
-            // }
-        
-
-
-}
     if (loop_index % data_frequency == 0) {     // loop_index를 data_frequency로 나눈 나머지가 0이면 데이터를 저장.
         save_data(m, d);
         
@@ -212,15 +201,9 @@ void mycontroller(const mjModel* m, mjData* d)  // 제어주기 0.000025임
 // main function
 int main(int argc, const char** argv)
 {   
-    for(int i = 0 ; i<4 ; i++)
-        leg_controller[i].init();   
-    tqbi2jtq << 1, 1, 0, 1; jtq2tqbi << 1,-1,0,1;
-    // 필요한 행렬
-    jnt2bi << 1,0,
-        1,1;
-    bi2jnt << 1,0,
-        -1,1;
+    
 
+    
     // activate software
     mj_activate("mjkey.txt");
 
@@ -282,11 +265,22 @@ int main(int argc, const char** argv)
     mjcb_control = mycontroller; // 무한 반복되는 함수
 
     fid = fopen(datafile, "w");
-    init_save_data();
+    // init_save_data();
 
 // 초기 각도 입력    0.546812);Actuator ACT_RLKNEE(3, 2.59478)
     
  
+    
+    d->qpos[0] = 0;
+    d->qpos[1] = 0;
+    d->qpos[2] =  0.5;   // qpos[0,1,2] : trunk pos                                                                                                                 
+    //                     // qpos[3,4,5.6] : trunk orientation quaternian
+    
+    d->qpos[3] = 0.7041;
+    d->qpos[4] = -0.7041;
+    d->qpos[5] = 0;
+    d->qpos[6] = 0;
+
     d->qpos[7] = 0; //FLHAA         //d->ctrl[0] FLHAA
     d->qpos[8] = pi/4; //FLHIP       //d->ctrl[1] FLHIP
     d->qpos[9] = pi/2; //FLKNEE        //d->ctrl[2] FLKNEE
@@ -299,7 +293,6 @@ int main(int argc, const char** argv)
     d->qpos[16] = 0; //RRHAA        //d->ctrl[9] RRHAA
     d->qpos[17] = pi/4; //RRHIP        //d->ctrl[10] RRHIP
     d->qpos[18] = pi/2; //RRKNEE       //d->ctrl[11] RRKNEE
-    
 
     // use the first while condition if you want to simulate for a period.
     while (!glfwWindowShouldClose(window)) // 주기 : 0.0167

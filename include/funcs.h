@@ -15,14 +15,15 @@ using namespace Eigen;
 using namespace std;
 
 
-extern MatrixXd leg_RWpos;
-extern double r_des;
-extern double motor_pos[3];
+// extern MatrixXd leg_RWpos;
+// extern double r_des;
+// extern double motor_pos[3];
 extern Vector2d DOB_data;
+extern double disturb;
 
 // #define G 9.81
 double PI = 3.141592;
-double T = 0.001;
+double T = 0.0001;
 // extern bool DOB_on = 0;
 char filename[] = "scene.xml";
 char datafile[] = "data/ROBOT_DOB.csv";
@@ -52,8 +53,7 @@ bool button_middle = false;
 bool button_right = false;
 double lastx = 0;
 double lasty = 0;
-double Ts = 0.001;
-double cutoff = 150;
+double cutoff = 200;
 
 // keyboard callback
 void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods)
@@ -132,56 +132,52 @@ void init_save_data() // csv파일의 데이터 명을 지정하는 함수 -> �
 {
     //write name of the variable here (header)
     fprintf(fid, "t, ");
-    fprintf(fid, "r_des, r_curr,pos_mot, vel_mot, acc_mot, DOB, dist"); // disturbace error
+    fprintf(fid, "dist_des, dist"); // disturbace error
 
     //Don't remove the newline
     fprintf(fid, "\n");
 }
 
-////***************************
-////This function is called at a set frequency, put data here
+// ////***************************
+// ////This function is called at a set frequency, put data here
 void save_data(const mjModel* m, mjData* d) 
 {   
     //data here should correspond to headers in init_save_data()
     //seperate data by a space %f followed by space
     
     fprintf(fid, "%f, ", d->time);
-    fprintf(fid, "%f , %f, %f, %f, %f, %f, %f", r_des, leg_RWpos(0,0),motor_pos[0], motor_pos[1], motor_pos[2],DOB_data[0], disturbance[0]);
+    fprintf(fid, "%f, %f" ,disturb, DOB_data[0]);
 
-    // cout <<r_des << "  " <<leg_RWpos(0,0)<<endl;
-    // fprintf(fid, "%f, %f, %f, %f, %f,", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0)); // hip에서만 측정
-    // printf("%f, %f, %f, %f, %f,\n", disturbance, QFL_d_hat(0),QFR_d_hat(0),QRL_d_hat(0),QRR_d_hat(0));
-    //Don't remove the newline
     fprintf(fid, "\n");
 }
 
-double tustin_derivative(double input, double input_old, double output_old, double cutoff_freq)
-{
-    double time_const = 1 / (2 * PI * cutoff_freq);
-    double output = 0;
+// double tustin_derivative(double input, double input_old, double output_old, double cutoff_freq)
+// {
+//     double time_const = 1 / (2 * PI * cutoff_freq);
+//     double output = 0;
 
-    output = (2 * (input - input_old) - (0.0001 - 2 * time_const) * output_old) / (0.0001 + 2 * time_const);
+//     output = (2 * (input - input_old) - (0.0001 - 2 * time_const) * output_old) / (0.0001 + 2 * time_const);
 
-    return output;
-}
+//     return output;
+// }
 
-double t_k =0 ;
-double t_kold= 0 ;
-int contol_loop = 4; // 0.0001ms초를 보장해주는 놈
-void loop_tcheck()// loop time check해주는 놈
-{ 
-    t_k = d->time;
-    printf("%f \n", t_k-t_kold);
-    t_kold = t_k;
-}
+// double t_k =0 ;
+// double t_kold= 0 ;
+// int contol_loop = 4; // 0.0001ms초를 보장해주는 놈
+// void loop_tcheck()// loop time check해주는 놈
+// { 
+//     t_k = d->time;
+//     printf("%f \n", t_k-t_kold);
+//     t_kold = t_k;
+// }
 
-// 1 / (tau*s+1)
-double lowpassfilter(double input, double input_old, double output_old, double cutoff_freq) 
-{
-    double time_const = 1 / (2 * PI * cutoff_freq);
-    double output = 0;
+// // 1 / (tau*s+1)
+// double lowpassfilter(double input, double input_old, double output_old, double cutoff_freq) 
+// {
+//     double time_const = 1 / (2 * PI * cutoff_freq);
+//     double output = 0;
 
-    output = (Ts * (input + input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
+//     output = (Ts * (input + input_old) - (Ts - 2 * time_const) * output_old) / (Ts + 2 * time_const);
 
-    return output;
-}
+//     return output;
+// }

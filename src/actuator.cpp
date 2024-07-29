@@ -14,7 +14,7 @@ void Actuator::setDelayData()
 void Actuator::acc_cal(double cutoff)
 {
   double time_const = 1 / (2 * PI * cutoff);
-  double Ts = 0.001;
+  double Ts = 0.0001;
 
   Motor_acc[0] = (2 * (Motor_vel[0] - Motor_vel[1]) - 
                       (Ts - 2 * time_const) * Motor_acc[1]) / (Ts + 2 * time_const);
