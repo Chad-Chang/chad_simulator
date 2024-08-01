@@ -204,3 +204,122 @@ void trajectory::Hold(StateModel_* state_model)
     state_model->posRW_ref[0] = 0.3536;
     state_model->posRW_ref[1] = pi / 2;
 };
+
+
+void trajectory::trajectory_walking(double t, StateModel_* stat_model, int leg_num)
+{
+    double r0 = 0.3536;
+    double freq_walking = 1;
+
+    double T_total = 0.5;
+
+    double T_period = T_total;
+    double T = T_total / 4;
+    double a = 0.1;
+    double t_norm = t - T_period * floor(t / T_period);
+
+    double sweptangle = a / (r0 * freq_walking);
+    double rc = 0.1;
+    double k = 0;
+    
+    if (0 <= t_norm && t_norm < T_total) //init
+    {   
+        vel_trunk_des[0] = 0.;
+        vel_trunk_des[1] = 0.;
+        // vel_trunk_des[2] = 0.;                // Alpha
+        // vel_trunk_des[3] = 0.;                // Beta
+        // vel_trunk_des[4] = 0.;                // Gamma
+
+
+        pos_trunk_des[0] = a*t_norm;
+        pos_trunk_des[1] = r0;
+        // pos_trunk_des[2] = 0.;
+        // pos_trunk_des[3] = 0.;
+        // pos_trunk_des[4] = 0.;
+
+        
+        /*printf("%f\n", sweptangle);*/
+        
+        //FL
+        if(leg_num == 0){
+            if (0 <= t_norm && t_norm < 3*T)  //FL stance
+            {
+                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3*T) * t_norm) - k; 
+                stat_model->posRW_ref[0] = r0;
+            }      
+            else if (3*T <= t_norm && t_norm < 4*T) //FL swing
+            {
+                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi/T * (t_norm- (3*T) )) - k;
+                stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
+            }
+        }
+        
+
+        // FR
+        if(leg_num == 1){
+            if (0 <= t_norm && t_norm < 2*T)  //FR stance
+            {
+                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * t_norm + pi / 3) - k;
+                stat_model->posRW_ref[0] = r0;
+            }
+            else if (2*T <= t_norm && t_norm < 3*T) //FR swing
+            {
+                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T * (t_norm - 2*T)) - k;
+                stat_model->posRW_ref[0] = r0;
+                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * (t_norm - 2 * T));*/
+            }
+            else if(3*T <= t_norm && t_norm < 4*T)  //FR stance
+            {
+                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) *( t_norm-3*T)) - k;
+                stat_model->posRW_ref[0] = r0;
+            }
+        }
+
+        //RL
+        if(leg_num == 2){
+            if (0 <= t_norm && t_norm < T)  //RL stance
+            {
+                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * t_norm + 2*pi / 3)- k;
+                stat_model->posRW_ref[0] = r0;
+            }
+            else if (T <= t_norm && t_norm < 2*T) //RL swing
+            {
+                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T * (t_norm - T)) - k;
+                stat_model->posRW_ref[0] = r0;
+                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * (t_norm - T));*/
+            }
+            else if (2*T <= t_norm && t_norm < 4*T)  //RL stance
+            {
+                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * (t_norm - 2*T)) - k;
+                stat_model->posRW_ref[0] = r0;
+            }
+        }
+        //RR
+        if(leg_num == 3){
+            if (0 <= t_norm && t_norm < T)  //RR swing
+            {
+                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T *t_norm) - k;
+                stat_model->posRW_ref[0] = r0;
+                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * t_norm);*/
+
+                /*printf("%f\n", stat_model->posRW_ref[0]);*/
+            }
+            else if(T <= t_norm && t_norm < 4*T) //RR stance
+            {
+                stat_model->posRW_ref[1] = pi / 2  +  sweptangle / 2 * cos(pi / (3 * T) * (t_norm-T)) - k;
+                stat_model->posRW_ref[0] = r0;
+            }
+        }
+    
+
+
+        // printf("%f, %f, %f, %f \n", state_Model_FL->posRW_ref[1], stat_model->posRW_ref[1], stat_model->posRW_ref[1], stat_model->posRW_ref[1]);
+        // state_Model_FL->posRW_ref[1] = pi / 2 + a/2 + state_Model_FL->Swept_angle / freq_walking;
+        // stat_model->posRW_ref[1] = pi / 2 + a/6 + stat_model->Swept_angle / freq_walking;
+        // stat_model->posRW_ref[1] = pi / 2 - a/6 + stat_model->Swept_angle / freq_walking;
+        // stat_model->posRW_ref[1] = pi / 2 - a/2 + stat_model->Swept_angle / freq_walking;
+        
+        
+    }
+
+}

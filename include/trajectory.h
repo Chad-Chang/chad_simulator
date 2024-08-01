@@ -28,6 +28,9 @@ class trajectory
         double jump_T_recover;
         double jump_qd_max;
 
+        Vector2d vel_trunk_des;
+        Vector2d pos_trunk_des;
+
 
 
     public:
@@ -36,6 +39,7 @@ class trajectory
         void Squat(double t,StateModel_* state_model);
         void Jumping(double t, StateModel_* state_model, int mode_admitt);
         void Hold(StateModel_* state_model);
+        void trajectory_walking(double t, StateModel_* stat_model, int leg_num);
 
 
 };

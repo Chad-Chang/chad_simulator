@@ -19,6 +19,9 @@ const double g = 9.81;    // gravitational accel.
 const double pi = 3.141592;
 
 
+extern Vector2d disturbance;
+extern Vector2d d0;
+
 
 /* Trunk Dimension */
 extern const double width_trunk;

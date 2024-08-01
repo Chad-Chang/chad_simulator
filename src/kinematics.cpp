@@ -1,5 +1,6 @@
 #include "kinematics.h"
-
+#include <iostream>
+using namespace std;
 kinematics::kinematics(){};
 
 kinematics::~kinematics(){};
@@ -37,7 +38,7 @@ void kinematics::state_update(StateModel_* state_model)
 void kinematics::model_param_cal(const mjModel* m, mjData* d, StateModel_* state_model)
 {
     cut_off_cal = 1/(2*pi*150);
-
+    // cout << state_model -> q[1] <<endl;
     /* Trunk Parameters */
     m_hip = 2.5;
     m_trunk_front = 10.;
@@ -67,7 +68,7 @@ void kinematics::model_param_cal(const mjModel* m, mjData* d, StateModel_* state
     // printf("Jzz_thigh : %f, Jzz_shank : %f \n", Jzz_thigh, Jzz_shank);
 
     double M1 = Jzz_thigh + m_shank * pow(L, 2);
-    double M2 = m_shank * d_shank * L * cos(state_model->q[1]);
+    double M2 = m_shank * d_shank * L * cos(state_model->q[2]);
     double M12 = Jzz_shank;
 
     MatInertia_bi(0,0) = M1;
@@ -82,26 +83,29 @@ void kinematics::model_param_cal(const mjModel* m, mjData* d, StateModel_* state
     
     
 
-    JzzR_thigh  = Jzz_thigh + Jzz_shank + m_shank * pow(L, 2) - 2 * m_shank * d_shank * L * cos(state_model->q[1]);
+    JzzR_thigh  = Jzz_thigh + Jzz_shank + m_shank * pow(L, 2) - 2 * m_shank * d_shank * L * cos(state_model->q[2]);
     JzzR_couple = Jzz_thigh + m_shank * pow(L, 2) - Jzz_shank;
-    JzzR_shank = Jzz_thigh + Jzz_shank+ m_shank * pow(L, 2) + 2 * m_shank * d_shank * L * cos(state_model->q[1]);
+    JzzR_shank = Jzz_thigh + Jzz_shank+ m_shank * pow(L, 2) + 2 * m_shank * d_shank * L * cos(state_model->q[2]);
     // printf("JzzR_thigh : %f, JzzR_shank : %f, JzzR_couple : %f \n", JzzR_thigh, JzzR_shank,
     // JzzR_couple);
 
-    MatInertia_RW(0,0) = JzzR_thigh / (4 * pow(L, 2) * pow(sin(state_model->q[1] / 2), 2));
-    MatInertia_RW(0,1) = JzzR_couple / (2 * pow(L, 2) * sin(state_model->q[1]));
-    MatInertia_RW(1,0) = JzzR_couple / (2 * pow(L, 2) * sin(state_model->q[1]));
-    MatInertia_RW(1,1) = JzzR_shank / (4 * pow(L, 2) * pow(cos(state_model->q[1] / 2), 2));
+    MatInertia_RW(0,0) = JzzR_thigh / (4 * pow(L, 2) * pow(sin(state_model->q[2] / 2), 2));
+    MatInertia_RW(0,1) = JzzR_couple / (2 * pow(L, 2) * sin(state_model->q[2]));
+    MatInertia_RW(1,0) = JzzR_couple / (2 * pow(L, 2) * sin(state_model->q[2]));
+    MatInertia_RW(1,1) = JzzR_shank / (4 * pow(L, 2) * pow(cos(state_model->q[2] / 2), 2));
         
     
     Inertia_DOB(0,0) = MatInertia_RW(0,0);
     Inertia_DOB(0,1) = 0;
     Inertia_DOB(1,0) = 0;
     Inertia_DOB(1,1) = MatInertia_RW(1,1);
+    
 
     double check[4] = { 0 };
     
     state_model->Lamda_nominal_DOB = state_model->jacbRW_trans*Inertia_DOB*state_model->jacbRW;
+    // cout << state_model->jacbRW_trans << endl;
+    // cout << state_model->Lamda_nominal_DOB <<endl;
     
     //Coriolis & Gravity
     H[0] = -m_shank * d_shank * L * sin(state_model->q[1]) * pow(state_model->qdot_bi[1], 2)
@@ -114,7 +118,7 @@ void kinematics::model_param_cal(const mjModel* m, mjData* d, StateModel_* state
 
 void kinematics::sensor_measure(const mjModel* m, mjData* d, StateModel_* state_model, int leg_no)
 {
-    cut_off_cal = 1/(2*pi*150);
+    cut_off_cal = 1/(2*pi*100);
     /*** (Serial) Joint position ***/
     /*** (Serial) Joint position ***/
     // state_model->q[0] = d->sensordata[leg_no + 6];
@@ -162,10 +166,10 @@ void kinematics::sensor_measure(const mjModel* m, mjData* d, StateModel_* state_
 void kinematics::jacobianRW(StateModel_* state_model)
 {
     /*** Rotating Workspace ***/
-    state_model->jacbRW(0,0) =  L * sin(state_model->q[1] / 2);
-    state_model->jacbRW(0,1) = -L * sin(state_model->q[1] / 2);
-    state_model->jacbRW(1,0) =  L * cos(state_model->q[1] / 2);
-    state_model->jacbRW(1,1) =  L * cos(state_model->q[1] / 2);
+    state_model->jacbRW(0,0) =  L * sin(state_model->q[2] / 2);
+    state_model->jacbRW(0,1) = -L * sin(state_model->q[2] / 2);
+    state_model->jacbRW(1,0) =  L * cos(state_model->q[2] / 2);
+    state_model->jacbRW(1,1) =  L * cos(state_model->q[2] / 2);
     
     state_model->jacbRW_trans = state_model->jacbRW.transpose(); 
 
