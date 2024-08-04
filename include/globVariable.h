@@ -19,6 +19,7 @@ const double g = 9.81;    // gravitational accel.
 const double pi = 3.141592;
 
 
+
 extern Vector2d disturbance;
 extern Vector2d d0;
 
@@ -73,6 +74,7 @@ struct StateModel_
 
     double q_bi[NDOF_LEG]; // biarticular joint angle
     double q_bi_old[NDOF_LEG];
+    double qdot[NDOF_LEG];
 
     Vector2d qdot_bi;  // biarticular joint angular vel (sensor)
     Vector2d qdot_bi_old;
@@ -87,12 +89,17 @@ struct StateModel_
     Vector2d tau_bi; // (Biarticular) joint torques
     Vector2d tau_bi_old;
 
+    Vector2d corriolis_bi_torq;
+    Vector2d gravity_bi_torq;
+    Matrix2d off_diag_inertia_bi;
+    
 
     /* Rotating Workspace Coordinates */
     double r0;              // initial leg length
     Vector2d posRW; // RW position
     Vector2d posRW_old;
     Vector2d posRW_ref; // RW position reference
+    Vector2d posRW_des; // not influenced by admittance
     Vector2d posRW_ref_old;
     Vector2d posRW_ref_old2;
     // double error_pos[NDOF_LEG];
@@ -114,6 +121,7 @@ struct StateModel_
     Matrix2d jacbRW_trans_inv;
     
     double touch_sensor;
+    bool touched;
     double tau_ff[NDOF_LEG];
 
     double time;

@@ -41,13 +41,26 @@ void trajectory::Squat(double t,StateModel_* state_model)
     if (0 <= t_norm && t_norm < t1)
     {
         state_model->posRW_ref[0] = squat_r0;
+        state_model->posRW_des[0] = squat_r0;
         state_model->posRW_ref[1] = pi / 2;
+        state_model->posRW_des[0] = pi/2;
+
+        state_model->velRW_ref[0] = 0;
+        state_model->velRW_ref[1] = 0;
     }
     else if (t1 <= t_norm && t_norm < t2)
     {
         state_model->posRW_ref[0] = squat_r0 - 0.5 * deltaR * (1 - cos(2 * pi * freq_squat * (t_norm - t1)));
+
+        state_model->posRW_des[0] = squat_r0 - 0.5 * deltaR * (1 - cos(2 * pi * freq_squat * (t_norm - t1)));
         state_model->posRW_ref[1] = pi / 2;
+        state_model->velRW_ref[1] = 0;
+
+        state_model->posRW_des[0] = pi/2;
+
         state_model->velRW_ref[0] = -deltaR * (pi * freq_squat) * sin(2 * pi * freq_squat * (t_norm - t1));
+        
+        
     }
 };
 
@@ -100,8 +113,7 @@ void trajectory::Jumping(double t, StateModel_* state_model, int mode_admitt)
     //     state_model->posRW_ref[0] = 0.5 * (jump->r0 + jump->rc) + 0.5 * (jump->r0 - jump->rc) * cos((pi / jump->T_crouch) * (t_norm - t0));
     //     state_model->posRW_ref[1] = pi / 2.;
     //     state_model->velRW_ref[0] = -0.5 * (pi / jump->T_crouch) * (jump->r0 - jump->rc) * sin((pi / jump->T_crouch) * (t_norm - t0));
-    //     state_model->velRW_ref[1] = .0;
-
+    //     state_model->velRW_ref[1] = .0;velRW
     //     if (mode_admitt == 1)
     //     {
     //         param_tuning->Ma_new = param_tuning->Ma;
@@ -202,124 +214,215 @@ void trajectory::Jumping(double t, StateModel_* state_model, int mode_admitt)
 void trajectory::Hold(StateModel_* state_model)
 {
     state_model->posRW_ref[0] = 0.3536;
-    state_model->posRW_ref[1] = pi / 2;
+    state_model->posRW_des[0] = state_model->posRW_ref[0];
+    state_model->posRW_ref[1] = pi /2;
 };
 
 
-void trajectory::trajectory_walking(double t, StateModel_* stat_model, int leg_num)
-{
-    double r0 = 0.3536;
-    double freq_walking = 1;
+Vector2d trajectory::cubic_trajectory(double T_f, double T_curr, Vector2d P0, Vector2d Pf)
+{   
+    double x1 = Pf[0]; double dx1 = Pf[1]; double x0=  P0[0]; double dx0 = P0[1];
+    double t = T_curr/T_f;
+    Vector2d St; 
+    if(T_f > T_curr)
+    {
+        St[0] = (-2*x1+dx0+2*x0 +dx1)*pow(t,3) + (3*x1-dx1-3*x0 - 2*dx0)*pow(t,2) + dx0 *t + x0;
+        St[1] = 3*(-2*x1+dx0+2*x0 +dx1)*pow(t,2) + 2*(3*x1-dx1-3*x0 - 2*dx0)*pow(t,1) + dx0;
+        return St;
+    }
+    else
+    {
+        St[0] = x1;
+        St[1] = dx1;
+        return St;
+    }
+};
 
-    double T_total = 0.5;
+void trajectory::trajectory_walking(double t, StateModel_* stat_model,double vx, int leg_num)
 
-    double T_period = T_total;
-    double T = T_total / 4;
-    double a = 0.1;
-    double t_norm = t - T_period * floor(t / T_period);
+{   
+    double T_max = 0.5;
 
-    double sweptangle = a / (r0 * freq_walking);
-    double rc = 0.1;
-    double k = 0;
+
+    wd = -vx/r0; // desired theta vel 
+    double h1 = 1.2;
+    double m ;
+    double T_period = 4*T_stand/3; 
+    t_norm = t-time_now;    
+
+    if(leg_num ==0 || leg_num ==3 ) m = 6;
+    else if(leg_num ==6 || leg_num ==9 ) m = 6;
+
+    r_td = r0;
+    double a = B_m/(m*r_td);
+    double b= g/(r_td);
+    double e_1 = (-a + sqrt(pow(a,2) - 4*b))/2;
+    double e_2 = (-a - sqrt(pow(a,2) - 4*b))/2;
+
+    //steady state swept angleT_stand
     
-    if (0 <= t_norm && t_norm < T_total) //init
-    {   
-        vel_trunk_des[0] = 0.;
-        vel_trunk_des[1] = 0.;
-        // vel_trunk_des[2] = 0.;                // Alpha
-        // vel_trunk_des[3] = 0.;                // Beta
-        // vel_trunk_des[4] = 0.;                // Gamma
-
-
-        pos_trunk_des[0] = a*t_norm;
-        pos_trunk_des[1] = r0;
-        // pos_trunk_des[2] = 0.;
-        // pos_trunk_des[3] = 0.;
-        // pos_trunk_des[4] = 0.;
-
+    
+    double T = T_stand/3;
+// cout <<"th_r = "<< th_r<<endl;
+    // cout <<"stance time => "<< T_stand<<endl;
+    // cout <<"stance time0  = "<< T_stand<<endl;
+    //FR
+        // if(leg_num == 0)
+        // {    
+        //     if (0 <= t_norm && t_norm < 3*T)  //FL stance
+        //     {   
+        //         th_to = pi - th_td ;
+        //         stat_model->posRW_ref[1] = th_td + wd*(t_norm); 
+        //         stat_model->posRW_ref[0] = r0;
+                
+        //     }      
+        //     else if (3*T <= t_norm && t_norm < 4*T) //FL swing
+        //     {  
+        //         if(t_norm >= 3*T  && t_norm <3*T+0.0001 ) 
+        //         {
+        //             th_to = stat_model->posRW[1];
+        //             th_r = (2 * wd) * (((e_2 -e_1) + (e_1*exp(e_1*T_stand) - e_2*exp(e_2*T_stand))+a*(exp(e_1*T_stand) - exp(e_2 * T_stand)))/(e_1*e_2*(exp(e_1*T_stand)-exp(e_2*T_stand))));
+        //             du = h1*(pi/2-th_r/2 -th_to)+th_r;
+        //             // cout << "th_to = "<< th_to << "  du = "<< du <<endl;
+        //             th_td = th_to + du;
+        //             // cout <<"th_r = "<< th_r<<endl;
+                    
+        //         }
+        //         else
+        //         {
+        //             stat_model->posRW_ref[1] = th_to+th_r;
+        //             stat_model->posRW_ref[0] = r0;// - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
+        //         }
+        //     }
+        //     else
+        //     {
+        //             time_now = t;
+        //             T_stand = -2*(th_td-pi/2)/wd; // standing time
+        //             // cout <<"stance time  = "<< T_stand<<endl;
+        //             // if(T_stand >T_max)
+        //             //     T_stand = T_max;
+        //             // cout << th_r <<endl;
+                
+        //     }
+        // }
         
-        /*printf("%f\n", sweptangle);*/
-        
-        //FL
-        if(leg_num == 0){
-            if (0 <= t_norm && t_norm < 3*T)  //FL stance
-            {
-                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3*T) * t_norm) - k; 
-                stat_model->posRW_ref[0] = r0;
-            }      
-            else if (3*T <= t_norm && t_norm < 4*T) //FL swing
-            {
-                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi/T * (t_norm- (3*T) )) - k;
-                stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
-            }
-        }
-        
 
-        // FR
-        if(leg_num == 1){
+    // RR
+        if(leg_num == 9)
+        {
             if (0 <= t_norm && t_norm < 2*T)  //FR stance
             {
-                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * t_norm + pi / 3) - k;
+                th_buf1 = th_buf2 + wd*(t_norm);
+                stat_model->posRW_ref[1] = th_buf1; 
                 stat_model->posRW_ref[0] = r0;
             }
             else if (2*T <= t_norm && t_norm < 3*T) //FR swing
             {
-                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T * (t_norm - 2*T)) - k;
-                stat_model->posRW_ref[0] = r0;
-                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * (t_norm - 2 * T));*/
+                if(t_norm >= 2*T  && t_norm <2*T+0.0001 ) 
+                {
+                    th_to = stat_model->posRW[1];
+                    th_r = (2 * wd) * (((e_2 -e_1) + (e_1*exp(e_1*T_stand) - e_2*exp(e_2*T_stand))+a*(exp(e_1*T_stand) - exp(e_2 * T_stand)))/(e_1*e_2*(exp(e_1*T_stand)-exp(e_2*T_stand))));
+                    du = h1*(pi/2-th_r/2 -th_to)+th_r;
+                    th_td = th_to + du;
+                }
+                else
+                {
+                    stat_model->posRW_ref[1] = th_td;
+                    stat_model->posRW_ref[0] = r0;// - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
+                }
             }
             else if(3*T <= t_norm && t_norm < 4*T)  //FR stance
-            {
-                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) *( t_norm-3*T)) - k;
+            {   
+                th_buf2 = th_td+wd*(t_norm -3*T);
+                stat_model->posRW_ref[1] =th_buf2;
                 stat_model->posRW_ref[0] = r0;
+            }
+            else
+            {
+                time_now = t;
+                T_stand = -2*(th_td-pi/2)/wd; // standing time
+                if(T_stand >T_max)
+                    T_stand = T_max;
+                // cout << th_r <<endl;
             }
         }
 
-        //RL
-        if(leg_num == 2){
+    // FL
+        if(leg_num == 0){
             if (0 <= t_norm && t_norm < T)  //RL stance
             {
-                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * t_norm + 2*pi / 3)- k;
+                th_buf1 = th_buf2 + wd*(t_norm);
+                stat_model->posRW_ref[1] = th_buf1; 
                 stat_model->posRW_ref[0] = r0;
             }
             else if (T <= t_norm && t_norm < 2*T) //RL swing
             {
-                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T * (t_norm - T)) - k;
-                stat_model->posRW_ref[0] = r0;
-                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * (t_norm - T));*/
+                if(t_norm >= T  && t_norm <T+0.0001 ) 
+                {   
+                    cout << " FL = " << t <<endl;
+                    th_to = stat_model->posRW[1];
+                    th_r = (2 * wd) * (((e_2 -e_1) + (e_1*exp(e_1*T_stand) - e_2*exp(e_2*T_stand))+a*(exp(e_1*T_stand) - exp(e_2 * T_stand)))/(e_1*e_2*(exp(e_1*T_stand)-exp(e_2*T_stand))));
+                    du = h1*(pi/2-th_r/2 -th_to)+th_r;
+                    th_td = th_to + du;
+                }
+                else
+                {
+                    stat_model->posRW_ref[1] = th_td;
+                    stat_model->posRW_ref[0] = r0;// - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
+                }
             }
             else if (2*T <= t_norm && t_norm < 4*T)  //RL stance
             {
-                stat_model->posRW_ref[1] = pi / 2 + sweptangle / 2 * cos(pi / (3 * T) * (t_norm - 2*T)) - k;
+                th_buf2 = th_td+wd*(t_norm -2*T);
+                stat_model->posRW_ref[1] =th_buf2;
                 stat_model->posRW_ref[0] = r0;
             }
+            else
+            {
+                time_now = t;
+                T_stand = -2*(th_td-pi/2)/wd; // standing time
+                if(T_stand >T_max)
+                    T_stand = T_max;
+                cout << th_r <<endl;
+            }
         }
-        //RR
-        if(leg_num == 3){
+
+        //RL
+        if(leg_num == 6){
+            
             if (0 <= t_norm && t_norm < T)  //RR swing
             {
-                stat_model->posRW_ref[1] = pi / 2 - sweptangle / 2 * cos(pi / T *t_norm) - k;
-                stat_model->posRW_ref[0] = r0;
-                /*stat_model->posRW_ref[0] = r0 - 0.5 * rc + 0.5 * rc * cos(2 * pi / T * t_norm);*/
-
-                /*printf("%f\n", stat_model->posRW_ref[0]);*/
+                if(t_norm >= 0  && t_norm <0.0001 ) 
+                {
+                    cout << " RL = " << t <<endl;
+                    th_to = stat_model->posRW[1];
+                    th_r = (2 * wd) * (((e_2 -e_1) + (e_1*exp(e_1*T_stand) - e_2*exp(e_2*T_stand))+a*(exp(e_1*T_stand) - exp(e_2 * T_stand)))/(e_1*e_2*(exp(e_1*T_stand)-exp(e_2*T_stand))));
+                    du = h1*(pi/2-th_r/2 -th_to)+th_r;
+                    th_td = th_to + du;
+                }
+                else
+                {
+                    stat_model->posRW_ref[1] = th_td;
+                    stat_model->posRW_ref[0] = r0;// - 0.5 * rc + 0.5 * rc * cos(2*pi/T * (t_norm - 3*T));
+                }
             }
             else if(T <= t_norm && t_norm < 4*T) //RR stance
             {
-                stat_model->posRW_ref[1] = pi / 2  +  sweptangle / 2 * cos(pi / (3 * T) * (t_norm-T)) - k;
+                th_buf1 = th_td + wd*(t_norm-T);
+                stat_model->posRW_ref[1] = th_buf1; 
                 stat_model->posRW_ref[0] = r0;
+            }
+            else
+            {
+                time_now = t;
+                T_stand = -2*(th_td-pi/2)/wd; // standing time
+                if(T_stand >T_max)
+                    T_stand = T_max;
+                // cout << th_r <<endl;
             }
         }
     
 
 
-        // printf("%f, %f, %f, %f \n", state_Model_FL->posRW_ref[1], stat_model->posRW_ref[1], stat_model->posRW_ref[1], stat_model->posRW_ref[1]);
-        // state_Model_FL->posRW_ref[1] = pi / 2 + a/2 + state_Model_FL->Swept_angle / freq_walking;
-        // stat_model->posRW_ref[1] = pi / 2 + a/6 + stat_model->Swept_angle / freq_walking;
-        // stat_model->posRW_ref[1] = pi / 2 - a/6 + stat_model->Swept_angle / freq_walking;
-        // stat_model->posRW_ref[1] = pi / 2 - a/2 + stat_model->Swept_angle / freq_walking;
-        
-        
-    }
 
 }

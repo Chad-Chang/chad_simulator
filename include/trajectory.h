@@ -2,7 +2,8 @@
 #define	__TRAJECTORY_H__
 
 #include "globVariable.h"
-
+#include <iostream>
+using namespace std;
 class trajectory
 {
     private:
@@ -28,6 +29,26 @@ class trajectory
         double jump_T_recover;
         double jump_qd_max;
 
+        double mass;
+        double r_td;
+        double r_to;
+        double B_m = 2000;
+        double th_td = pi/2;
+        double th_to= pi/2;
+        double th_r; // steddy state일때의 swept 각도
+        double wd;
+        double r0 = 0.4;
+        double du;
+        double T_stand=0.1; 
+        double time_now;
+        bool time_reset = true; 
+        double t_norm;
+        int count ; 
+        double time_buff;
+        double th_buf1;
+        double th_buf2;
+
+
         Vector2d vel_trunk_des;
         Vector2d pos_trunk_des;
 
@@ -39,8 +60,8 @@ class trajectory
         void Squat(double t,StateModel_* state_model);
         void Jumping(double t, StateModel_* state_model, int mode_admitt);
         void Hold(StateModel_* state_model);
-        void trajectory_walking(double t, StateModel_* stat_model, int leg_num);
-
+        void trajectory_walking(double t, StateModel_* stat_model, double vx, int leg_num);
+        Vector2d cubic_trajectory(double T_f, double T_curr, Vector2d P0, Vector2d Pf);
 
 };
 

@@ -16,7 +16,7 @@ private:
     double m_trunk_rear;  // mass of rear trunk
     double m_trunk;       // total mass of trunk
     double m_total;       // total robot mass
-
+    double a = 0.3536; 
     /* Leg Parameter */  
     double L; // leg length : thigh and shank links' length are assumed to be the same
 
@@ -36,6 +36,12 @@ private:
     double JzzR_thigh;
     double JzzR_shank;
     double JzzR_couple;
+    double touch_threshold = 6.5; 
+    
+    Vector2d coriolis_bi_;
+    Vector2d gravity_bi_;
+    Matrix2d off_diag_inertia_bi_;
+
 
     double cut_off_cal; // Using in calculate vel,acc
 
@@ -45,6 +51,7 @@ private:
 
     Vector2d H;
     Vector2d H_old;
+    
 
 public:
     kinematics(); //생성자

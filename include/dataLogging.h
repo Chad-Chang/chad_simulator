@@ -12,6 +12,7 @@ char datapath[] = "data/data.csv";
 char filename[] = "scene.xml";
 char datafile[] = "data.csv";
 
+extern Vector2d z; extern Vector2d h; extern Vector2d o;
 void init_save_data()
 {
     // This function is called once and is used to get the headers
@@ -19,7 +20,7 @@ void init_save_data()
     // comma(,) should be omitted in the last line.
     
     fprintf(fid, "t, ");
-    fprintf(fid, "dis, d_hat");
+    fprintf(fid, "ref_R, ref_th, Rv, thv");
     
     
     // Don't remove the newline
@@ -47,7 +48,16 @@ void save_data(const mjModel* m, mjData* d, StateModel_* state_model)
     fprintf(fid, "%f, ", d->time);
     
     // fprintf(fid, "%f, %f, %f, %f, ", state_model->posRW_ref[0], state_model->posRW_ref[1], state_model->posRW[0], state_model->posRW[1]);
-    fprintf(fid, "%f, %f",disturbance[0], -d0[0]);
+    // fprintf(fid, "%f, %f",disturbance[0], -d0[0]);
+    
+    // Vector2d leg_rw_ref_pos = state_model->posRW_ref;
+    // Vector2d leg_rw_pos = state_model->posRW;
+    
+    // 여기분터 
+    // fprintf(fid, "%f, %f, %f", leg_rw_ref_pos[0],leg_rw_pos[0],leg_rw_ref_pos[0]-leg_rw_pos[0]);
+    fprintf(fid, "%f, %f, %f, %f",z[0],z[1] ,o[0],o[1]);
+    // printf("%f, %f, %f, %f \n",z[0],z[1] ,o[0],o[1]);
+
 
     
     

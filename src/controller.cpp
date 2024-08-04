@@ -75,12 +75,13 @@ void controller::pid_gain_pos(double kp, double kd, double cut_off)
 
 };
 
-void controller::pid_gain_vel(double kp, double kd, double cut_off)
+void controller::pid_gain_vel(double kp, double ki, double kd, double cut_off)
 {
     for (int i = 0; i < NDOF_LEG; i++)
     {
         Kp_vel[i] = kp;
         Kd_vel[i] = kd;
+        Ki_vel[i] = ki;
         cut_off_D_vel = cut_off;
 
     }
@@ -94,9 +95,11 @@ void controller::ctrl_update()
         //PID pos
         error_old_pos[i] = error_pos[i];
         error_dot_old_pos[i] = error_dot_pos[i];
+        
         //PID vel
         error_old_vel[i] = error_vel[i];
         error_dot_old_vel[i] = error_dot_vel[i];
+        error_integral_old_vel[i] = error_integral_vel[i];
 
         //admittance
         deltaPos_old2[i] = deltaPos_old[i];
@@ -124,6 +127,7 @@ Vector2d controller::PID_pos(StateModel_* state_model)
     for (int i = 0; i < NDOF_LEG; i++) // Error를 state 모델에 넣을 필요 있는지 생각해봐야함. error는 여기에 있어도 됨. //error들 update 해줘야함
     {
         error_pos[i] = state_model->posRW_ref[i] - state_model->posRW[i];
+        
         error_old_pos[i] = state_model->posRW_ref_old[i] - state_model->posRW_old[i];
         
         error_dot_pos[i] = tustin_derivative(error_pos[i], error_old_pos[i], error_dot_old_pos[i], cut_off_D_pos);
@@ -135,7 +139,7 @@ Vector2d controller::PID_pos(StateModel_* state_model)
 
 };
 
-void controller::PID_vel(StateModel_* state_model)
+Vector2d controller::PID_vel(StateModel_* state_model)
 {
     for (int i = 0; i < NDOF_LEG; i++)
     {
@@ -145,8 +149,10 @@ void controller::PID_vel(StateModel_* state_model)
         error_dot_vel[i] = tustin_derivative(error_vel[i], error_old_vel[i], error_dot_old_vel[i], cut_off_D_vel);
         
         // DOB 끄면 PID만 사용해야하는데 state model에 넣지 않아도 되는지 생각해봐야함.
-        PID_output_vel[i] = Kp_vel[i] * error_vel[i] + Kd_vel[i] * error_dot_vel[i]; // 이걸 return을 사용하면?
+        error_integral_vel[i] = integral(error_vel[i], error_old_vel[i], error_integral_old_vel[i]);
+        PID_output_vel[i] = Kp_vel[i] * error_vel[i] + Kd_vel[i] * error_dot_vel[i] + Ki_vel[i]*error_integral_vel[i]; // 이걸 return을 사용하면?
     }
+    return PID_output_vel;
 }; // negative velocity PID feedback
 
 void controller::admittanceCtrl(StateModel_* state_model, double omega_n , double zeta, double k, int flag)
@@ -219,5 +225,48 @@ void controller::FOBRW(StateModel_* state_model, double cut_off)
          
 } // Rotating WorkspaceForce Observer
 
+
+
+Vector2d controller::nonlinear_compensation_torque(StateModel_* state_model)
+{
+    Vector2d nonlinear_term;
+    nonlinear_term = state_model->corriolis_bi_torq 
+                     +state_model -> gravity_bi_torq 
+                    + state_model->off_diag_inertia_bi*state_model->qddot_bi;
+    
+    return nonlinear_term;
+};
+
+Vector2d controller::inertia_modulation_torque(StateModel_* state_model, double M_des)
+{
+    Vector2d modulation_torque;   
+    Matrix2d modulation_inertia; Matrix2d diag_inertia_bi;
+    modulation_inertia(0,0) = M_des;
+    modulation_inertia(0,1) = 0;
+    modulation_inertia(1,0) = 0;
+    modulation_inertia(1,1) = M_des;
+    
+    diag_inertia_bi(0,0) = state_model->Lamda_nominal_DOB(0,0);
+    diag_inertia_bi(0,1) = 0;
+    diag_inertia_bi(1,0) = 0;
+    diag_inertia_bi(1,1) = state_model->Lamda_nominal_DOB(1,1);
+
+
+    modulation_torque = ( diag_inertia_bi-modulation_inertia*(0.25-0.25*state_model->q[2]))*state_model->qddot_bi_tustin;
+    return modulation_torque;
+};
+
+Vector2d controller::feedback_bi_control(StateModel_* state_model, double M_des, double Bm, double wd, double K)
+{
+    Vector2d F ;
+    double r = state_model->posRW[0]; double dr = state_model->velRW[0]; double th_r = state_model->posRW[1]; 
+    double th_br = state_model -> q[2]; double r_d = state_model->posRW_des[0]; 
+    double dth_br = state_model ->qdot[2]; double dth_r = state_model->velRW[1]/r;
+    cout <<r_d << "  "<< r <<endl;
+    F[0] = K*(r_d-r)+0.5*M_des*(cos(th_br)-1)*dth_br*dr+M_des*g;
+    F[1] = Bm*(wd-dth_r)-M_des*g*th_r;
+    // F[1] = 0;
+    return F;
+};
 
 

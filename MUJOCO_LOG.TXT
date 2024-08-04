@@ -36,3 +36,84 @@ Fri Jul  5 21:46:51 2024
 ERROR: Load model error: Error: could not open STL file '../assets/meshes/trunk.STL'
 Object name = trunk, id = 0, line = 0, column = -1
 
+Thu Aug  1 15:22:27 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Aug  1 15:23:55 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Thu Aug  1 15:24:36 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Fri Aug  2 00:23:23 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.2101.
+
+Fri Aug  2 00:23:31 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.2101.
+
+Fri Aug  2 00:23:38 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.2101.
+
+Sat Aug  3 12:34:47 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Sat Aug  3 17:42:26 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.1155.
+
+Sat Aug  3 17:43:38 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 1.1155.
+
+Sun Aug  4 18:14:16 2024
+WARNING: Nan, Inf or huge value in QACC at DOF 6. The simulation is unstable. Time = 2.2143.
+
+Sun Aug  4 19:36:49 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 1. The simulation is unstable. Time = 0.0000.
+
+Sun Aug  4 20:21:36 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.1164.
+
+Sun Aug  4 22:26:52 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.0003.
+
+Sun Aug  4 22:27:22 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.0003.
+
+Sun Aug  4 22:28:01 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.1799.
+
+Sun Aug  4 22:28:21 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.1732.
+
+Sun Aug  4 22:28:38 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.0003.
+
+Sun Aug  4 22:29:29 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.0003.
+
+Sun Aug  4 22:34:26 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 1.0003.
+
+Sun Aug  4 22:43:30 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.5003.
+
+Sun Aug  4 22:44:41 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.5003.
+
+Sun Aug  4 22:45:15 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.5003.
+
+Sun Aug  4 22:48:05 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.6732.
+
+Sun Aug  4 22:49:11 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.6732.
+
+Sun Aug  4 22:51:38 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.6732.
+
+Sun Aug  4 22:52:27 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.6732.
+
+Sun Aug  4 22:53:40 2024
+WARNING: Nan, Inf or huge value in CTRL at ACTUATOR 7. The simulation is unstable. Time = 0.6732.
+

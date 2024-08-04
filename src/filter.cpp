@@ -23,3 +23,10 @@ double lowpassfilter(double input, double input_old, double output_old, double c
 
     return output;
 }
+
+double integral(double input, double input_old, double output_old)
+{
+    double output = 0;
+    output = output_old + Ts*(input + input_old)/2;
+    return output;
+}

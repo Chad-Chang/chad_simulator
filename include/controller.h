@@ -27,12 +27,17 @@ private:
     // Vel_PID
     Vector2d Kp_vel; // [Leg_num][dimension] ->ex) [RL][r,theta]
     Vector2d Kd_vel;
+    Vector2d Ki_vel;
+
     double cut_off_D_vel;
     Vector2d PID_output_vel;
     Vector2d error_vel;
     Vector2d error_old_vel;
     Vector2d error_dot_vel;
     Vector2d error_dot_old_vel;
+
+    Vector2d error_integral_vel;
+    Vector2d error_integral_old_vel;
 
     //Admittance
     double ad_M;
@@ -67,6 +72,8 @@ private:
     Vector2d forceExt_hat_old2; 
     double cut_off_fob;
 
+    // Vector2d ;
+
 
 
 public:
@@ -74,15 +81,19 @@ public:
     ~controller(); //소멸자
     
     void pid_gain_pos(double kp, double kd, double cut_off_pos);
-    void pid_gain_vel(double kp, double kd, double cut_off_vel);
+    void pid_gain_vel(double kp,double ki, double kd, double cut_off_vel);
     Vector2d PID_pos(StateModel_* state_model);
-    void PID_vel(StateModel_* state_model);
+    Vector2d PID_vel(StateModel_* state_model);
     void admittanceCtrl(StateModel_* state_model, double m, double b, double k, int flag);
     Vector2d DOBRW(StateModel_* state_model, double cut_off ,int flag);
     void FOBRW(StateModel_* state_model, double cut_off);
     void ctrl_update(); // 이걸 사용할지에 대해서 생각해보기
     void ctrl_data_Logging();
     void ctrl_data_init();
+    Vector2d nonlinear_compensation_torque(StateModel_* state_model);
+    Vector2d inertia_modulation_torque(StateModel_* state_model, double M_des);
+    Vector2d feedback_bi_control(StateModel_* state_model, double M_des, double Bm, double wd, double K);
+    
     
 
 };

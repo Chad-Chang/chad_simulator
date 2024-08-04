@@ -9,6 +9,6 @@ using namespace Eigen;
 
 double tustin_derivative(double input, double input_old, double output_old, double cutoff_freq);
 double lowpassfilter(double input, double input_old, double output_old, double cutoff_freq);
-
+double integral(double input, double input_old, double output_old);
 
 #endif // !__FILTER_H__

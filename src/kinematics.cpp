@@ -108,12 +108,27 @@ void kinematics::model_param_cal(const mjModel* m, mjData* d, StateModel_* state
     // cout << state_model->Lamda_nominal_DOB <<endl;
     
     //Coriolis & Gravity
-    H[0] = -m_shank * d_shank * L * sin(state_model->q[1]) * pow(state_model->qdot_bi[1], 2)
-         - g * (m_thigh * d_thigh + m_shank * L) * cos(state_model->q_bi[0]);
 
-    H[1] = m_shank * d_shank * L * sin(state_model->q[1]) * pow(state_model->qdot_bi[0], 2)
-         - g * m_shank * d_shank * cos(state_model->q_bi[1]);
+    // H[0] = -m_shank * d_shank * L * sin(state_model->q[1]) * pow(state_model->qdot_bi[1], 2)
+    //      - g * (m_thigh * d_thigh + m_shank * L) * cos(state_model->q_bi[0]);
 
+    // H[1] = m_shank * d_shank * L * sin(state_model->q[1]) * pow(state_model->qdot_bi[0], 2)
+    //      - g * m_shank * d_shank * cos(state_model->q_bi[1]);
+
+    coriolis_bi_[0] = -m_shank*d_shank*L*sin(state_model->q[2])*pow(state_model->qddot_bi_tustin[1],2);
+    coriolis_bi_[1] = m_thigh*d_shank*L*sin(state_model->q[2]) * pow(state_model->qdot_bi_tustin[0], 2);
+    gravity_bi_[0] = g * (m_thigh * d_thigh + m_shank * L) * cos(state_model->q_bi[0]);
+    gravity_bi_[1] = g * m_shank * d_shank * cos(state_model->q_bi[2]);
+
+    off_diag_inertia_bi_(0,0)= 0;
+    off_diag_inertia_bi_(0,1)= m_shank*d_shank*L*cos(state_model->q[2]);
+    off_diag_inertia_bi_(1,0)= off_diag_inertia_bi_(0,1);
+    off_diag_inertia_bi_(1,1)= 0;
+    
+    state_model -> corriolis_bi_torq = coriolis_bi_;
+    state_model -> gravity_bi_torq = gravity_bi_;
+    state_model -> off_diag_inertia_bi = off_diag_inertia_bi_;
+    // diagonal inertia는 DOB의 nominal inertia
 }; // param_model parameter
 
 void kinematics::sensor_measure(const mjModel* m, mjData* d, StateModel_* state_model, int leg_no)
@@ -127,6 +142,10 @@ void kinematics::sensor_measure(const mjModel* m, mjData* d, StateModel_* state_
     state_model->q[0] = d->qpos[leg_no + 7];
     state_model->q[1] = d->qpos[leg_no + 8]; // (relative) HFE angle
     state_model->q[2] = d->qpos[leg_no + 9]; // (relative) KFE angle
+    
+    state_model->qdot[0] = d->qvel[leg_no + 6]; // 속도는 이게 맞음.
+    state_model->qdot[1] = d->qvel[leg_no + 7];
+    state_model->qdot[2] = d->qvel[leg_no + 8];
 
     /*** Biarticular Transformation ***/ 
     state_model->q_bi[0] = d->qpos[leg_no + 8];                             // (absolute) HFE angle
@@ -137,14 +156,28 @@ void kinematics::sensor_measure(const mjModel* m, mjData* d, StateModel_* state_
 
     // printf("q1 : %f, q2 : %f \n", d->qpos[0], d->qpos[1]);
     // printf("qm : %f, qb : %f \n\n", q_bi[0], q_bi[1]);
-
+    if(leg_no == 0)
+        state_model->touch_sensor = d->sensordata[18];
+    else if(leg_no == 3)
+        state_model->touch_sensor = d->sensordata[22];
+    else if(leg_no == 6)
+        state_model->touch_sensor = d->sensordata[26];
+    else if(leg_no == 9)
+        state_model->touch_sensor = d->sensordata[30];
+    cout <<" touch = "<< state_model->touch_sensor << endl;
+    if(state_model->touch_sensor >= touch_threshold)
+    {
+        cout<< "leg num = "<< leg_no/3 << " stance "<<endl;
+        state_model -> touched = true;
+    }
+    
 // angular velocity data_ real data
-    state_model->qdot_bi[0] = d->qvel[leg_no + 8];
-    state_model->qdot_bi[1] = d->qvel[leg_no + 8] + d->qvel[leg_no + 9];
+    state_model->qdot_bi[0] = d->qvel[leg_no + 7];
+    state_model->qdot_bi[1] = d->qvel[leg_no + 7] + d->qvel[leg_no + 8];
 
 //angular acceleration data_real data
-    state_model->qddot_bi[0] = d->qacc[leg_no + 8];
-    state_model->qddot_bi[1] = d->qacc[leg_no + 8] + d->qacc[leg_no + 9];
+    // state_model->qddot_bi[0] = d->qacc[leg_no + 7];
+    // state_model->qddot_bi[1] = d->qacc[leg_no + 7] + d->qacc[leg_no + 8];
 
     for (int i = 0; i < NDOF_LEG; i++)
     {
@@ -181,7 +214,20 @@ void kinematics::fwdKinematics_cal(StateModel_* state_model)
     state_model->posRW[0] = 2 * L * cos((state_model->q_bi[1] - state_model->q_bi[0]) / 2); // r
     state_model->posRW[1] = (state_model->q_bi[0] + state_model->q_bi[1]) / 2;                           // qr
 
-    state_model->velRW = state_model->jacbRW*state_model->qdot_bi_tustin;
+    state_model->jacbRW(0,0) =  L * sin(state_model->q[2] / 2);
+    state_model->jacbRW(0,1) = -L * sin(state_model->q[2] / 2);
+    state_model->jacbRW(1,0) =  L * cos(state_model->q[2] / 2);
+    state_model->jacbRW(1,1) =  L * cos(state_model->q[2] / 2);
+
+    state_model->velRW = state_model->jacbRW*state_model->qdot_bi;
+    
+    a += state_model->velRW[0];
+    // cout << "pos = " << state_model->posRW[0] << "  "<< state_model->posRW[1]  << endl;
+    // cout <<" sin = " <<state_model->jacbRW << endl;
+    // cout << "bi = "<< a << "  "<< state_model->velRW[1]/state_model->posRW[0]  << endl;
+    // cout << "vel = "<< state_model->velRW[0] << "  "<< state_model->velRW[1]/state_model -> posRW[0]  << endl;
+    
+    // cout << "vel2 = "<< (state_model->posRW[0]- state_model->posRW_old[0])/Ts<< "  "<< (state_model->velRW[1]-state_model->velRW_old[1])/(state_model -> posRW[0]*Ts)  << endl;
     
 };
 
@@ -247,3 +293,4 @@ void kinematics::state_init(const mjModel* m, mjData* d, StateModel_* state_mode
     }
     // printf("%f, %f \n", state_model->q_bi_old[0], state_model->q_bi_old[1]);
 };
+
